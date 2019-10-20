@@ -1,0 +1,9 @@
+.*
+*.bak
+*.log
+*.diff
+*.patch
+*.iml
+target
+eclipse-target
+war
