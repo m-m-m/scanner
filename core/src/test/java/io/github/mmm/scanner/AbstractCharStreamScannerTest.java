@@ -1,13 +1,17 @@
 /* Copyright (c) The m-m-m Team, Licensed under the Apache License, Version 2.0
  * http://www.apache.org/licenses/LICENSE-2.0 */
-package net.sf.mmm.scanner;
+package io.github.mmm.scanner;
 
 import java.util.Locale;
 
-import net.sf.mmm.base.filter.CharFilter;
-
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import io.github.mmm.base.filter.CharFilter;
+import io.github.mmm.scanner.CharScannerSyntax;
+import io.github.mmm.scanner.CharScannerSyntaxBean;
+import io.github.mmm.scanner.CharSequenceScanner;
+import io.github.mmm.scanner.CharStreamScanner;
 
 /**
  * This is the abstract test for implementations of {@link CharStreamScanner}.

@@ -68,4 +68,4 @@
  * implementations are highly efficient and internally directly operate on {@code char[]}. Streaming implementations use
  * optimized lookahead buffers that can even be configured at construction time.
  */
-package net.sf.mmm.scanner;
+package io.github.mmm.scanner;

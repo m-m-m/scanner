@@ -1,12 +1,9 @@
 /* Copyright (c) The m-m-m Team, Licensed under the Apache License, Version 2.0
  * http://www.apache.org/licenses/LICENSE-2.0 */
-package net.sf.mmm.scanner;
+package io.github.mmm.scanner;
 
 /**
  * Simple static helper for dealing with escaped characters.
- *
- * @author hohwille
- * @since 7.6.0
  */
 public class CharEscapeHelper {
 
@@ -43,10 +40,9 @@ public class CharEscapeHelper {
   private static final Character CHAR_BEL = Character.valueOf('\7');
 
   /**
-   * @param c the character that was escaped (e.g. 't' for tab, 'n' for line feed, 'r' for carriage return,
-   *        '0' for NUL, etc.)
-   * @return the resolved (unescaped) character according to JLS 3.10.6 or {@code null} for invalid escape
-   *         character.
+   * @param c the character that was escaped (e.g. 't' for tab, 'n' for line feed, 'r' for carriage return, '0' for NUL,
+   *        etc.)
+   * @return the resolved (unescaped) character according to JLS 3.10.6 or {@code null} for invalid escape character.
    * @see #resolveEscape(String)
    */
   public static Character resolveEscape(char c) {
@@ -89,10 +85,9 @@ public class CharEscapeHelper {
   }
 
   /**
-   * @param sequence the sequence of characters that has been escaped (e.g. "u000A" for line feed, or "u00df"
-   *        for szlig/ß, etc.)
-   * @return the resolved (unescaped) character according to JLS 3.10.6 or {@code null} for invalid escape
-   *         sequence.
+   * @param sequence the sequence of characters that has been escaped (e.g. "u000A" for line feed, or "u00df" for
+   *        szlig/ß, etc.)
+   * @return the resolved (unescaped) character according to JLS 3.10.6 or {@code null} for invalid escape sequence.
    * @see #resolveEscape(char)
    */
   public static Character resolveEscape(String sequence) {

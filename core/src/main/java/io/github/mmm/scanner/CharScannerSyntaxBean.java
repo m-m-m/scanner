@@ -1,6 +1,6 @@
 /* Copyright (c) The m-m-m Team, Licensed under the Apache License, Version 2.0
  * http://www.apache.org/licenses/LICENSE-2.0 */
-package net.sf.mmm.scanner;
+package io.github.mmm.scanner;
 
 /**
  * This is the implementation of {@link CharScannerSyntax} as Java bean. <br>
@@ -8,9 +8,6 @@ package net.sf.mmm.scanner;
  * <code>'\0'</code> so they are disabled by default.
  *
  * @see CharStreamScanner#readUntil(char, boolean, CharScannerSyntax)
- *
- * @author Joerg Hohwiller (hohwille at users.sourceforge.net)
- * @since 1.0.0
  */
 public class CharScannerSyntaxBean implements CharScannerSyntax {
 

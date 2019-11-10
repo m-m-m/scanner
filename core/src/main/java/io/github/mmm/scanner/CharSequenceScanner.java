@@ -1,8 +1,8 @@
 /* Copyright (c) The m-m-m Team, Licensed under the Apache License, Version 2.0
  * http://www.apache.org/licenses/LICENSE-2.0 */
-package net.sf.mmm.scanner;
+package io.github.mmm.scanner;
 
-import net.sf.mmm.base.filter.CharFilter;
+import io.github.mmm.base.filter.CharFilter;
 
 /**
  * This class represents a {@link String} or better a sequence of characters ( {@code char[]}) together with a
@@ -12,9 +12,6 @@ import net.sf.mmm.base.filter.CharFilter;
  * calling {@link String#charAt(int)}. <br>
  * <b>ATTENTION:</b><br>
  * This implementation is NOT and has no intention to be thread-safe.
- *
- * @author Joerg Hohwiller (hohwille at users.sourceforge.net)
- * @since 1.0.0
  */
 public class CharSequenceScanner extends AbstractCharStreamScanner {
 

@@ -1,20 +1,17 @@
 /* Copyright (c) The m-m-m Team, Licensed under the Apache License, Version 2.0
  * http://www.apache.org/licenses/LICENSE-2.0 */
-package net.sf.mmm.scanner;
+package io.github.mmm.scanner;
 
 import java.io.IOException;
 import java.io.Reader;
 
-import net.sf.mmm.base.string.CaseHelper;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.github.mmm.base.text.CaseHelper;
+
 /**
  * Implementation of {@link CharStreamScanner} that adapts a {@link Reader} to read and parse textual data.
- *
- * @author Joerg Hohwiller (hohwille at users.sourceforge.net)
- * @since 7.5.0
  */
 public class CharReaderScanner extends AbstractCharStreamScanner {
 

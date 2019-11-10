@@ -1,13 +1,11 @@
 /* Copyright (c) The m-m-m Team, Licensed under the Apache License, Version 2.0
  * http://www.apache.org/licenses/LICENSE-2.0 */
-package net.sf.mmm.scanner;
+package io.github.mmm.scanner;
 
-import net.sf.mmm.base.filter.CharFilter;
+import io.github.mmm.base.filter.CharFilter;
 
 /**
  * This is the interface for a scanner that can be used to parse a stream or sequence of characters.
- *
- * @author Joerg Hohwiller (hohwille at users.sourceforge.net)
  */
 public interface CharStreamScanner {
 

@@ -1,8 +1,11 @@
 /* Copyright (c) The m-m-m Team, Licensed under the Apache License, Version 2.0
  * http://www.apache.org/licenses/LICENSE-2.0 */
-package net.sf.mmm.scanner;
+package io.github.mmm.scanner;
 
 import java.io.StringReader;
+
+import io.github.mmm.scanner.CharReaderScanner;
+import io.github.mmm.scanner.CharStreamScanner;
 
 /**
  * Test of {@link CharReaderScanner}.

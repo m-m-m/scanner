@@ -1,8 +1,11 @@
 /* Copyright (c) The m-m-m Team, Licensed under the Apache License, Version 2.0
  * http://www.apache.org/licenses/LICENSE-2.0 */
-package net.sf.mmm.scanner;
+package io.github.mmm.scanner;
 
 import org.junit.jupiter.api.Test;
+
+import io.github.mmm.scanner.CharSequenceScanner;
+import io.github.mmm.scanner.CharStreamScanner;
 
 /**
  * Test of {@link CharSequenceScanner}.

@@ -1,0 +1,24 @@
+image:https://raw.github.com/m-m-m/mmm/master/src/site/resources/images/logo.png[logo,link="https://m-m-m.github.io"]
+
+= mmm-scanner
+
+image:https://travis-ci.org/m-m-m/scanner.svg?branch=master["build-status",link="https://travis-ci.org/m-m-m/scanner"]
+
+The module `mmm-scanner` helps to parse character sequences efficient and easily.
+
+=== Usage
+
+Want to give it a try?
+
+Maven Dependency:
+```xml
+<dependency>
+  <groupId>io.githib.m-m-m</groupId>
+  <artifactId>mmm-scanner</artifactId>
+</dependency>
+```
+
+Module Dependency:
+```java
+  requires transitive io.github.mmm.scanner;
+```

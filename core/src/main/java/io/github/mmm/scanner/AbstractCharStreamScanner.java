@@ -1,22 +1,19 @@
 /* Copyright (c) The m-m-m Team, Licensed under the Apache License, Version 2.0
  * http://www.apache.org/licenses/LICENSE-2.0 */
-package net.sf.mmm.scanner;
+package io.github.mmm.scanner;
 
 import java.util.NoSuchElementException;
 
-import net.sf.mmm.base.filter.CharFilter;
-import net.sf.mmm.base.string.CaseHelper;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.github.mmm.base.filter.CharFilter;
+import io.github.mmm.base.text.CaseHelper;
 
 /**
  * Abstract implementation of {@link CharStreamScanner}.<br>
  * <b>ATTENTION:</b><br>
  * This implementation and its sub-classes are NOT thread-safe and have no intention to be thread-safe.
- *
- * @author Joerg Hohwiller (hohwille at users.sourceforge.net)
- * @since 7.5.0
  */
 public abstract class AbstractCharStreamScanner implements CharStreamScanner {
 
