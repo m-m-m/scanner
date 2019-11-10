@@ -8,8 +8,6 @@ The module `mmm-scanner` helps to parse character sequences efficient and easily
 
 === Usage
 
-Want to give it a try?
-
 Maven Dependency:
 ```xml
 <dependency>
