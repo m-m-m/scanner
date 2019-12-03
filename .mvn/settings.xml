@@ -21,7 +21,7 @@
       </activation>
       <repositories>
        <repository>
-         <id>github</id>
+         <id>ossrh</id>
          <name>OSSRH Snapshots</name>
          <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
        </repository>
