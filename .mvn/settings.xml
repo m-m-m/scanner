@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings>
+  <servers>
+    <server>
+      <id>deploy-releases</id>
+      <username>${env.SONARTYPE_USERNAME}</username>
+      <password>${env.SONARTYPE_PASSWORD}</password>
+    </server>
+    <server>
+      <id>deploy-snapshots</id>
+      <username>${env.SONARTYPE_USERNAME}</username>
+      <password>${env.SONARTYPE_PASSWORD}</password>
+    </server>
+  </servers>
+
+  <profiles>
+    <profile>
+      <id>mmm</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <repositories>
+       <repository>
+         <id>github</id>
+         <name>OSSRH Snapshots</name>
+         <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+       </repository>
+     </repositories>
+    </profile>
+  </profiles>
+</settings>
