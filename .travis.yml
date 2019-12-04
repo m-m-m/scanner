@@ -6,7 +6,7 @@ env:
   - secure: fJPuAHAdC43mOz+cal2bm6NniBzWiwIEEpG/WClcKTTWWEm6wOBB8XjCqXvR+X3Dym6j8oKgLFNwfkXBf36QTo8JY2SubQeiqhLZMvoRfefswDsxqzYRR4anIQNksXqR+oERd5sYlMbV+qFElKagpsqHx6q9AfPGfs8N/uEK+Jg9E2ftqiDiDbiXD4b8Og2QX+fPM3QLQz3xumocqRq5KClTNBQnl53QkkTF6vrEW/WrwmJJNsHHaCKlSc76H3gV3cS/V7cI1UpDvpa8MQYzPMaFJnP7c5OhCKV0shukp+SbObipzD2Hfw8PttD1TJN5sN7oEsOgN/lNst0TvJi6mE0C69sTJu5hUVap+gpIzTSu1dpZ49sYjcVK1GEkjMBcORm8SOtVfstCQv8Ys9Ip2gI8UXx4lOmIIS5F+52yH8s3E8XI+OevcjSzewK5okzKAoQKSSadllWVjR5XB1T5JPvxxDodcLKHzCM7A1eRpAcVmKHMRhTwRrTMgaNOJOmM76pOT2vqDQrs5EH1kMDAZ3xj/3xaZgcepOWzMjKQNQmBWMhRmRBU3BDzvPspFQtmmVBZm8Bn33LvqDLk0X693We6FrjPzttDMK2PirPyXQtGGheKTnVDqArYEKuP39NMvfnH5W0zNW56nquBvBGFqeJD3zIuveFnRhmWnd+cwGk=
 install: skip
 script: mvn --settings .mvn/settings.xml install
-after_script: '[[ $TRAVIS_BRANCH == "master" ]] && mvn --settings .mvn/settings.xml deploy'
+after_script: '[[ $TRAVIS_BRANCH == "master" ]] && mvn --settings .mvn/settings.xml -DskipTests=true deploy'
 sudo: false
 cache:
   directories: "$HOME/.m2"
