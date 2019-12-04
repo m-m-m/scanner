@@ -13,11 +13,11 @@
  * The {@link io.github.mmm.scanner.CharStreamScanner} is an interface that covers typical tasks when paring strings or
  * streams and therefore makes your life a lot easier. You can concentrate on the syntax you want to parse and do NOT
  * need to repeat checks if the end is already reached all the time. For parsing enitre streams (e.g. from a
- * {@link java.io.Reader}) there is the implementation {@link net.sf.mmm.util.scanner.base.CharReaderScanner} while for
- * simple {@link java.lang.String}s there is the implementation {@link io.github.mmm.scanner.CharSequenceScanner}. In
- * any case the entire data and state (parsing position) is encapsulated so you can easily delegate a step to another
- * method or class. Otherwise you would need to pass the current position to that method and return the new one from
- * there. This is tricky if the method should already return something else. <br>
+ * {@link java.io.Reader}) there is the implementation {@link io.github.mmm.scanner.CharReaderScanner} while for simple
+ * {@link java.lang.String}s there is the implementation {@link io.github.mmm.scanner.CharSequenceScanner}. In any case
+ * the entire data and state (parsing position) is encapsulated so you can easily delegate a step to another method or
+ * class. Otherwise you would need to pass the current position to that method and return the new one from there. This
+ * is tricky if the method should already return something else. <br>
  * As a motivation and anti-pattern, here is a little example of an entirely handwritten parser:
  *
  * <pre>
