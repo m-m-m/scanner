@@ -8,7 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.github.mmm.base.filter.CharFilter;
-import io.github.mmm.base.lang.CaseHelper;
+import io.github.mmm.base.text.CaseHelper;
 
 /**
  * Abstract implementation of {@link CharStreamScanner}.<br>

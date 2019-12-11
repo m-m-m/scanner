@@ -8,7 +8,7 @@ import java.io.Reader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.github.mmm.base.lang.CaseHelper;
+import io.github.mmm.base.text.CaseHelper;
 
 /**
  * Implementation of {@link CharStreamScanner} that adapts a {@link Reader} to read and parse textual data.
