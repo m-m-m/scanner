@@ -34,6 +34,17 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
   /**
    * The constructor.
    *
+   * @param reader the (initial) {@link Reader}.
+   */
+  public CharReaderScanner(Reader reader) {
+
+    this();
+    this.reader = reader;
+  }
+
+  /**
+   * The constructor.
+   *
    * @param capacity the buffer capacity.
    */
   public CharReaderScanner(int capacity) {
