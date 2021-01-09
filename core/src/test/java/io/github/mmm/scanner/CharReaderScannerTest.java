@@ -4,9 +4,6 @@ package io.github.mmm.scanner;
 
 import java.io.StringReader;
 
-import io.github.mmm.scanner.CharReaderScanner;
-import io.github.mmm.scanner.CharStreamScanner;
-
 /**
  * Test of {@link CharReaderScanner}.
  */
