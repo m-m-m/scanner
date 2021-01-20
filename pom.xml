@@ -15,7 +15,7 @@
   <description>Module to parse character sequences efficient and easily.</description>
 
   <properties>
-    <revision>1.0.0</revision>
+    <revision>0.1.0</revision>
     <changelist>-SNAPSHOT</changelist>
     <mmm.repository>scanner</mmm.repository>
   </properties>
@@ -34,7 +34,7 @@
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>mmm-base-parent</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>0.1.0-SNAPSHOT</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
