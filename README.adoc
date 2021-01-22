@@ -6,7 +6,7 @@ image:https://travis-ci.com/m-m-m/scanner.svg?branch=master["build-status",link=
 = mmm-scanner
 
 image:https://img.shields.io/maven-central/v/io.github.m-m-m/mmm-scanner.svg?label=Maven%20Central["Maven Central",link=https://search.maven.org/search?q=g:io.github.m-m-m]
-image:https://m-m-m.github.io/javadoc.svg?status=online["apidoc",link="https://m-m-m.github.io/docs/api/io.github.mmm.scanner/module-summary.html"]
+image:https://javadoc.io/badge2/io.github.m-m-m/mmm-scanner/javadoc.svg["base JavaDoc", link=https://javadoc.io/doc/io.github.m-m-m/mmm-scanner]
 
 The module `io.github.mmm.scanner` (artifactId `mmm-scanner`) helps to parse character sequences efficiently and easily.
 
