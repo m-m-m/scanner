@@ -5,13 +5,13 @@
   <parent>
     <groupId>io.github.m-m-m</groupId>
     <artifactId>mmm-scanner-parent</artifactId>
-    <version>${revision}${changelist}</version>
+    <version>${revision}</version>
   </parent>
   <artifactId>mmm-scanner</artifactId>
   <packaging>jar</packaging>
   <name>${project.artifactId}</name>
   <description>Java module providing the event pattern as generic reusable API and implementation.</description>
-  
+
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>

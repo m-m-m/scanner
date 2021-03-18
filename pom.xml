@@ -9,13 +9,14 @@
     <relativePath>../parent/pom.xml</relativePath>
   </parent>
   <artifactId>mmm-scanner-parent</artifactId>
-  <version>${revision}${changelist}</version>
+  <version>${revision}</version>
   <packaging>pom</packaging>
   <name>${project.artifactId}</name>
   <description>Module to parse character sequences efficient and easily.</description>
 
   <properties>
     <mmm.repository>scanner</mmm.repository>
+    <revision>0-SNAPSHOT</revision>
   </properties>
 
   <modules>
