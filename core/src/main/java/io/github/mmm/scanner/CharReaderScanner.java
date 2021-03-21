@@ -23,6 +23,9 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
 
   private int lookaheadLimit;
 
+  /** @see #getPosition() */
+  protected int position;
+
   /**
    * The constructor.
    */
@@ -64,13 +67,21 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
     this.reader = reader;
   }
 
+  @Override
+  public int getPosition() {
+
+    return this.position + this.offset;
+  }
+
   /**
-   * Resets this buffer for reuse with a new {@link Reader}.
+   * Resets this buffer for reuse with a new {@link Reader}.<br>
+   * This will also reset the {@link #getPosition() position}.
    *
    * @param reader the new {@link Reader} to set. May be {@code null} to entirely clear this buffer.
    */
   public void setReader(Reader reader) {
 
+    this.position = 0;
     reset();
     this.reader = reader;
   }
@@ -83,9 +94,10 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
       return true;
     }
     if (this.reader == null) {
-      this.offset = this.limit;
+      this.limit = this.offset;
       return false;
     }
+    this.position += this.limit;
     this.offset = 0;
     try {
       this.limit = 0;
@@ -132,6 +144,7 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
 
   private void shiftLookahead() {
 
+    this.position += this.limit;
     char[] tmp = this.lookaheadBuffer;
     this.lookaheadBuffer = this.buffer;
     this.buffer = tmp;
@@ -173,10 +186,10 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
     if (this.offset < this.limit) {
       return false;
     }
-    if (this.reader != null) {
+    if (this.lookaheadLimit > 0) {
       return false;
     }
-    if (this.lookaheadLimit > 0) {
+    if (this.reader != null) {
       return false;
     }
     return true;

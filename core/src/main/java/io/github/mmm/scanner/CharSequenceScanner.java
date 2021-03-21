@@ -11,7 +11,9 @@ import io.github.mmm.base.filter.CharFilter;
  * therefore internally {@link String#toCharArray() converts} {@link String}s to a char array instead of frequently
  * calling {@link String#charAt(int)}. <br>
  * <b>ATTENTION:</b><br>
- * This implementation is NOT and has no intention to be thread-safe.
+ * This implementation is NOT thread-safe (intended by design).
+ *
+ * @since 1.0.0
  */
 public class CharSequenceScanner extends AbstractCharStreamScanner {
 
@@ -90,6 +92,12 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
     return this.buffer[this.initialOffset + index];
   }
 
+  @Override
+  public int getPosition() {
+
+    return this.offset - this.initialOffset;
+  }
+
   /**
    * @see java.lang.CharSequence#length()
    *
@@ -102,7 +110,6 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
 
   /**
    * @see String#substring(int, int)
-   * @see #appendSubstring(StringBuffer, int, int)
    *
    * @param start the start index, inclusive.
    * @param end the end index, exclusive.
@@ -134,18 +141,6 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
   }
 
   /**
-   * @param appendable is the buffer where to append the substring to.
-   * @param start the start index, inclusive.
-   * @param end the end index, exclusive.
-   * @deprecated use {@link #appendSubstring(StringBuilder, int, int)}
-   */
-  @Deprecated
-  public void appendSubstring(StringBuffer appendable, int start, int end) {
-
-    appendable.append(this.buffer, this.initialOffset + start, end - start);
-  }
-
-  /**
    * This method appends the {@link #substring(int, int) substring} specified by {@code start} and {@code end} to the
    * given {@code buffer}. <br>
    * This avoids the overhead of creating a new string and copying the char array.
@@ -153,7 +148,6 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
    * @param appendable is the buffer where to append the substring to.
    * @param start the start index, inclusive.
    * @param end the end index, exclusive.
-   * @since 7.5.0
    */
   public void appendSubstring(StringBuilder appendable, int start, int end) {
 
@@ -235,7 +229,6 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
    *        text (EOT) if the data-size is suitable.
    * @return a string with the given number of characters or all available characters if less than {@code count}. Will
    *         be the empty string if no character is {@link #hasNext() available} at all.
-   * @since 3.0.0
    */
   public String peek(int count) {
 

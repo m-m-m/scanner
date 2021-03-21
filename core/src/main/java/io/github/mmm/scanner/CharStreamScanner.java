@@ -12,7 +12,7 @@ public interface CharStreamScanner {
   /**
    * This method determines if there is at least one more character available.
    *
-   * @return {@code true} if there is at least one character available, {@code false} if the end of text (EOT) has been
+   * @return {@code true} if there is at least one character available, {@code false} if the end of data has been
    *         reached.
    */
   boolean hasNext();
@@ -49,6 +49,13 @@ public interface CharStreamScanner {
    * @return the current character or {@code 0} if none is {@link #hasNext() available}.
    */
   char forcePeek();
+
+  /**
+   * @return the position in the sequence to scan or in other words the number of bytes that have been read. Will
+   *         initially be {@code 0}. Please note that this API is designed for scanning textual content (for parsers).
+   *         Therefore we consider 2.1 terabyte as a suitable {@link Integer#MAX_VALUE limit}.
+   */
+  int getPosition();
 
   /**
    * This method reads the {@link #next() next character} if it is a digit. Else the state remains unchanged.
@@ -150,9 +157,9 @@ public interface CharStreamScanner {
    * @return {@code true} if the {@code expected} string was successfully consumed from this scanner, {@code false}
    *         otherwise.
    */
-  default boolean expect(String expected) {
+  default boolean expectUnsafe(String expected) {
 
-    return expect(expected, false);
+    return expectUnsafe(expected, false);
   }
 
   /**
@@ -174,10 +181,10 @@ public interface CharStreamScanner {
    * @return {@code true} if the {@code expected} string was successfully consumed from this scanner, {@code false}
    *         otherwise.
    */
-  boolean expect(String expected, boolean ignoreCase);
+  boolean expectUnsafe(String expected, boolean ignoreCase);
 
   /**
-   * This method acts as {@link #expect(String, boolean)} but if the expected String is NOT completely present, no
+   * This method acts as {@link #expectUnsafe(String, boolean)} but if the expected String is NOT completely present, no
    * character is {@link #next() consumed} and the state of the scanner remains unchanged.<br>
    * <b>Attention:</b><br>
    * This method requires lookahead. For implementations that are backed by an underlying stream (or reader) the
@@ -194,7 +201,7 @@ public interface CharStreamScanner {
   }
 
   /**
-   * This method acts as {@link #expect(String, boolean)} but if the expected String is NOT completely present, no
+   * This method acts as {@link #expectUnsafe(String, boolean)} but if the expected String is NOT completely present, no
    * character is {@link #next() consumed} and the state of the scanner remains unchanged.<br>
    * <b>Attention:</b><br>
    * This method requires lookahead. For implementations that are backed by an underlying stream (or reader) the
@@ -275,11 +282,11 @@ public interface CharStreamScanner {
    * character or to the end if NO such character exists.
    *
    * @param stop is the character to read until.
-   * @param acceptEot if {@code true} {@link #isEot() EOT} will be treated as {@code stop}, too.
+   * @param acceptEnd if {@code true} the end of data will be treated as {@code stop}, too.
    * @return the string with all read characters excluding the {@code stop} character or {@code null} if there was no
-   *         {@code stop} character and {@code acceptEot} is {@code false}.
+   *         {@code stop} character and {@code acceptEnd} is {@code false}.
    */
-  String readUntil(char stop, boolean acceptEot);
+  String readUntil(char stop, boolean acceptEnd);
 
   /**
    * This method reads all {@link #next() next characters} until the first character {@link CharFilter#accept(char)
@@ -288,14 +295,14 @@ public interface CharStreamScanner {
    * stop character or to the end if NO such character exists.
    *
    * @param filter is used to {@link CharFilter#accept(char) decide} where to stop.
-   * @param acceptEot if {@code true} if {@link #isEot() EOT} should be treated like the {@code stop} character and the
-   *        rest of the text will be returned, {@code false} otherwise (to return {@code null} if {@link #isEot() EOT}
-   *        was reached and the scanner has been consumed).
+   * @param acceptEnd if {@code true} if end of data should be treated like the {@code stop} character and the rest of
+   *        the text will be returned, {@code false} otherwise (to return {@code null} if the end of data was reached
+   *        and the scanner has been consumed).
    * @return the string with all read characters not {@link CharFilter#accept(char) accepted} by the given
    *         {@link CharFilter} or {@code null} if there was no {@link CharFilter#accept(char) accepted} character and
-   *         {@code acceptEot} is {@code false}.
+   *         {@code acceptEnd} is {@code false}.
    */
-  String readUntil(CharFilter filter, boolean acceptEot);
+  String readUntil(CharFilter filter, boolean acceptEnd);
 
   /**
    * This method reads all {@link #next() next characters} until the first character {@link CharFilter#accept(char)
@@ -305,19 +312,19 @@ public interface CharStreamScanner {
    * character exists.
    *
    * @param filter is used to {@link CharFilter#accept(char) decide} where to stop.
-   * @param acceptEot if {@code true} if {@link #isEot() EOT} should be treated like the {@code stop} character and the
-   *        rest of the text will be returned, {@code false} otherwise (to return {@code null} if {@link #isEot() EOT}
-   *        was reached and the scanner has been consumed).
+   * @param acceptEnd if {@code true} if the end of data should be treated like the {@code stop} character and the rest
+   *        of the text will be returned, {@code false} otherwise (to return {@code null} if end of data was reached and
+   *        the scanner has been consumed).
    * @param stop the {@link String} where to stop consuming data. Should be at least two characters long (otherwise
    *        accept by {@link CharFilter} instead).
    * @return the string with all read characters not {@link CharFilter#accept(char) accepted} by the given
-   *         {@link CharFilter} or until the given {@code stop} {@link String} was detected. If {@link #isEot() EOT} was
-   *         reached without a stop signal the entire rest of the data is returned or {@code null} if {@code acceptEot}
-   *         is {@code false}.
+   *         {@link CharFilter} or until the given {@code stop} {@link String} was detected. If end of data was reached
+   *         without a stop signal the entire rest of the data is returned or {@code null} if {@code acceptEnd} is
+   *         {@code false}.
    */
-  default String readUntil(CharFilter filter, boolean acceptEot, String stop) {
+  default String readUntil(CharFilter filter, boolean acceptEnd, String stop) {
 
-    return readUntil(filter, acceptEot, stop, false);
+    return readUntil(filter, acceptEnd, stop, false);
   }
 
   /**
@@ -328,21 +335,21 @@ public interface CharStreamScanner {
    * character exists.
    *
    * @param filter is used to {@link CharFilter#accept(char) decide} where to stop.
-   * @param acceptEot if {@code true} if {@link #isEot() EOT} should be treated like the {@code stop} character and the
-   *        rest of the text will be returned, {@code false} otherwise (to return {@code null} if {@link #isEot() EOT}
-   *        was reached and the scanner has been consumed).
+   * @param acceptEnd if {@code true} if the end of data should be treated like the {@code stop} character and the rest
+   *        of the text will be returned, {@code false} otherwise (to return {@code null} if the end of data was reached
+   *        and the scanner has been consumed).
    * @param stop the {@link String} where to stop consuming data. Should be at least two characters long (otherwise
    *        accept by {@link CharFilter} instead).
    * @param ignoreCase - if {@code true} the case of the characters is ignored when compared with characters from
    *        {@code stop} {@link String}.
    * @return the string with all read characters not {@link CharFilter#accept(char) accepted} by the given
-   *         {@link CharFilter} or until the given {@code stop} {@link String} was detected. If {@link #isEot() EOT} was
-   *         reached without a stop signal the entire rest of the data is returned or {@code null} if {@code acceptEot}
+   *         {@link CharFilter} or until the given {@code stop} {@link String} was detected. If the end of data was
+   *         reached without a stop signal the entire rest of the data is returned or {@code null} if {@code acceptEnd}
    *         is {@code false}.
    */
-  default String readUntil(CharFilter filter, boolean acceptEot, String stop, boolean ignoreCase) {
+  default String readUntil(CharFilter filter, boolean acceptEnd, String stop, boolean ignoreCase) {
 
-    return readUntil(filter, acceptEot, stop, ignoreCase, false);
+    return readUntil(filter, acceptEnd, stop, ignoreCase, false);
   }
 
   /**
@@ -353,20 +360,21 @@ public interface CharStreamScanner {
    * character exists.
    *
    * @param filter is used to {@link CharFilter#accept(char) decide} where to stop.
-   * @param acceptEot if {@code true} if {@link #isEot() EOT} should be treated like the {@code stop} character and the
-   *        rest of the text will be returned, {@code false} otherwise (to return {@code null} if {@link #isEot() EOT}
-   *        was reached and the scanner has been consumed).
+   * @param acceptEnd if {@code true} if the end of data should be treated like the {@code stop} character and the rest
+   *        of the text will be returned, {@code false} otherwise (to return {@code null} if the end of data was reached
+   *        and the scanner has been consumed).
    * @param stop the {@link String} where to stop consuming data. Should be at least two characters long (otherwise
    *        accept by {@link CharFilter} instead).
    * @param ignoreCase - if {@code true} the case of the characters is ignored when compared with characters from
    *        {@code stop} {@link String}.
    * @param trim - {@code true} if the result should be {@link String#trim() trimmed}, {@code false} otherwise.
    * @return the string with all read characters not {@link CharFilter#accept(char) accepted} by the given
-   *         {@link CharFilter} or until the given {@code stop} {@link String} was detected. If {@link #isEot() EOT} was
-   *         reached without a stop signal the entire rest of the data is returned or {@code null} if {@code acceptEot}
-   *         is {@code false}. Thre result will be {@link String#trim() trimmed} if {@code trim} is {@code true}.
+   *         {@link CharFilter} or until the given {@code stop} {@link String} was detected. If the end of data was
+   *         reached without hitting {@code stop} the entire rest of the data is returned or {@code null} if
+   *         {@code acceptEnd} is {@code false}. Thre result will be {@link String#trim() trimmed} if {@code trim} is
+   *         {@code true}.
    */
-  String readUntil(CharFilter filter, boolean acceptEot, String stop, boolean ignoreCase, boolean trim);
+  String readUntil(CharFilter filter, boolean acceptEnd, String stop, boolean ignoreCase, boolean trim);
 
   /**
    * This method reads all {@link #next() next characters} until the given (un-escaped) {@code stop} character or the
@@ -390,15 +398,15 @@ public interface CharStreamScanner {
    * </pre>
    *
    * @param stop is the character to read until.
-   * @param acceptEot if {@code true} {@link #isEot() EOT} will be treated as {@code stop}, too.
+   * @param acceptEnd if {@code true} the end of data will be treated as {@code stop}, too.
    * @param escape is the character used to escape the {@code stop} character. To add an occurrence of the
    *        {@code escape} character it has to be duplicated (occur twice). The {@code escape} character may also be
    *        equal to the {@code stop} character. If other regular characters are escaped the {@code escape} character is
    *        simply ignored.
    * @return the string with all read characters excluding the {@code stop} character or {@code null} if there was no
-   *         {@code stop} character and {@code acceptEot} is {@code false}.
+   *         {@code stop} character and {@code acceptEnd} is {@code false}.
    */
-  String readUntil(char stop, boolean acceptEot, char escape);
+  String readUntil(char stop, boolean acceptEnd, char escape);
 
   /**
    * This method reads all {@link #next() next characters} until the given {@code stop} character or the end of the
@@ -408,30 +416,30 @@ public interface CharStreamScanner {
    * character or to the end of the string if NO such character exists.
    *
    * @param stop is the character to read until.
-   * @param acceptEot if {@code true} {@link #isEot() EOT} will be treated as {@code stop}, too.
+   * @param acceptEnd if {@code true} the end of data will be treated as {@code stop}, too.
    * @param syntax contains the characters specific for the syntax to read.
    * @return the string with all read characters excluding the {@code stop} character or {@code null} if there was no
    *         {@code stop} character.
    * @see #readUntil(CharFilter, boolean, CharScannerSyntax)
    */
-  String readUntil(char stop, boolean acceptEot, CharScannerSyntax syntax);
+  String readUntil(char stop, boolean acceptEnd, CharScannerSyntax syntax);
 
   /**
    * This method reads all {@link #next() next characters} until the given {@link CharFilter}
-   * {@link CharFilter#accept(char) accepts} the current character as stop character or the end of text (EOT) is
-   * reached. In advance to {@link #readUntil(char, boolean)}, this method will scan the input using the given
-   * {@code syntax} which e.g. allows to {@link CharScannerSyntax#getEscape() escape} the stop character. <br>
+   * {@link CharFilter#accept(char) accepts} the current character as stop character or the end of data is reached. In
+   * advance to {@link #readUntil(char, boolean)}, this method will scan the input using the given {@code syntax} which
+   * e.g. allows to {@link CharScannerSyntax#getEscape() escape} the stop character. <br>
    * After the call of this method, the current index will point to the next character after the (first) {@code stop}
    * character or to the end of the string if NO such character exists.
    *
    * @param filter is used to {@link CharFilter#accept(char) decide} where to stop.
-   * @param acceptEot if {@code true} {@link #isEot() EOT} will be treated as {@code stop}, too.
+   * @param acceptEnd if {@code true} the end of data will be treated as {@code stop}, too.
    * @param syntax contains the characters specific for the syntax to read.
    * @return the string with all read characters excluding the {@code stop} character or {@code null} if there was no
    *         {@code stop} character.
    * @see #readUntil(char, boolean, CharScannerSyntax)
    */
-  String readUntil(CharFilter filter, boolean acceptEot, CharScannerSyntax syntax);
+  String readUntil(CharFilter filter, boolean acceptEnd, CharScannerSyntax syntax);
 
   /**
    * This method reads all {@link #next() next characters} that are {@link CharFilter#accept(char) accepted} by the
@@ -474,14 +482,14 @@ public interface CharStreamScanner {
    * @param count is the number of characters to skip. You may use {@link Integer#MAX_VALUE} to read until the end of
    *        data if the data-size is suitable.
    * @return a to total number of characters that have been skipped. Typically equal to {@code count}. Will be less in
-   *         case the {@link #isEos() end of the stream} was reached.
+   *         case the end of data was reached.
    */
   int skip(int count);
 
   /**
    * This method reads all {@link #next() next characters} until the given {@code substring} has been detected. <br>
    * After the call of this method, the current index will point to the next character after the first occurrence of
-   * {@code substring} or to the {@link #isEot() EOT} if the given {@code substring} was NOT found. <br>
+   * {@code substring} or to the end of data if the given {@code substring} was NOT found. <br>
    *
    * @param substring is the substring to search and skip over starting at the current index.
    * @return {@code true} if the given {@code substring} occurred and has been passed and {@code false} if the end of
@@ -495,7 +503,7 @@ public interface CharStreamScanner {
   /**
    * This method reads all {@link #next() next characters} until the given {@code substring} has been detected. <br>
    * After the call of this method, the current index will point to the next character after the first occurrence of
-   * {@code substring} or to the {@link #isEot() EOT} if the given {@code substring} was NOT found. <br>
+   * {@code substring} or to the end of data if the given {@code substring} was NOT found. <br>
    *
    * @param substring is the substring to search and skip over starting at the current index.
    * @param ignoreCase - if {@code true} the case of the characters is ignored when compared with characters from
@@ -510,10 +518,10 @@ public interface CharStreamScanner {
 
   /**
    * This method consumes all {@link #next() next characters} until the given {@code substring} has been detected, a
-   * character was {@link CharFilter#accept(char) accepted} by the given {@link CharFilter} or {@link #isEot() EOT} was
+   * character was {@link CharFilter#accept(char) accepted} by the given {@link CharFilter} or the end of data was
    * reached.<br>
    * After the call of this method this scanner will point to the next character after the first occurrence of
-   * {@code substring}, to the stop character or to {@link #isEot() EOT}. <br>
+   * {@code substring}, to the stop character or to end of data. <br>
    *
    * @param substring is the substring to search and skip over starting at the current index.
    * @param ignoreCase - if {@code true} the case of the characters is ignored when compared with characters from
@@ -610,8 +618,8 @@ public interface CharStreamScanner {
   }
 
   /**
-   * @return a {@link String} with the data until the end of the current line or {@link #isEot() EOT}. Will be
-   *         {@code null} if the EOT has already been reached and {@link #hasNext()} returns {@code false}.
+   * @return a {@link String} with the data until the end of the current line or the end of the data. Will be
+   *         {@code null} if the end has already been reached and {@link #hasNext()} returns {@code false}.
    */
   default String readLine() {
 
@@ -621,7 +629,7 @@ public interface CharStreamScanner {
   /**
    * @param trim - {@code true} if the result should be {@link String#trim() trimmed}, {@code false} otherwise.
    * @return a {@link String} with the data until the end of the current line ({@link String#trim() trimmed} if
-   *         {@code trim} is {@code true}) or {@link #isEot() EOT}. Will be {@code null} if the EOT has already been
+   *         {@code trim} is {@code true}) or the end of the data. Will be {@code null} if the end has already been
    *         reached and {@link #hasNext()} returns {@code false}.
    */
   String readLine(boolean trim);
@@ -723,22 +731,5 @@ public interface CharStreamScanner {
    *        exception in such case.
    */
   Character readJavaCharLiteral(boolean tolerant);
-
-  /**
-   * @return {@code true} if end of text (EOT) is known to have been reached, {@code false} otherwise. The returned
-   *         result will be almost the same as <code>!{@link #hasNext()}</code> but this method will not modify the
-   *         state of this scanner (read additional data, modify buffers, etc.). However, if the underlying stream is
-   *         already consumed without returning {@code -1} to signal {@link #isEos() EOS} this method may return
-   *         {@code false} even though the next call of {@link #hasNext()} may also return {@code false}.
-   */
-  boolean isEot();
-
-  /**
-   * @return {@code true} if the end of stream (EOS) has been reached, {@code false} otherwise. If {@code true} (EOS)
-   *         the internal buffer contains the entire rest of the data to scan in memory. If then also all data is
-   *         consumed from the buffer, {@link #isEot() EOT} has been reached. For instances of that are not backed by an
-   *         underlying stream of data (like {@link CharSequenceScanner}) this method will always return {@code true}.
-   */
-  boolean isEos();
 
 }

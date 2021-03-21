@@ -139,8 +139,13 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     return fill();
   }
 
-  @Override
-  public boolean isEos() {
+  /**
+   * @return {@code true} if the end of stream (EOS) has been reached, {@code false} otherwise. If {@code true} (EOS)
+   *         the internal buffer contains the entire rest of the data to scan in memory. If then also all data is
+   *         consumed from the buffer, {@link #isEot() EOT} has been reached. For instances of that are not backed by an
+   *         underlying stream of data (like {@link CharSequenceScanner}) this method will always return {@code true}.
+   */
+  protected boolean isEos() {
 
     return true;
   }
@@ -154,8 +159,16 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     return true;
   }
 
-  @Override
-  public boolean isEot() {
+  /**
+   * <b>ATTENTION:</b>
+   *
+   * @return {@code true} if end of text (EOT) is known to have been reached, {@code false} otherwise. The returned
+   *         result will be almost the same as <code>!{@link #hasNext()}</code> but this method will not modify the
+   *         state of this scanner (read additional data, modify buffers, etc.). However, if the underlying stream is
+   *         already consumed without returning {@code -1} to signal {@link #isEos() EOS} this method may return
+   *         {@code false} even though the next call of {@link #hasNext()} may also return {@code false}.
+   */
+  protected boolean isEot() {
 
     return (this.offset >= this.limit);
   }
@@ -464,7 +477,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
   @Override
   public void require(String expected, boolean ignoreCase) {
 
-    if (!expect(expected, ignoreCase)) {
+    if (!expectUnsafe(expected, ignoreCase)) {
       throw new IllegalStateException(
           "Expecting '" + expected + "' but found: " + new String(this.buffer, this.offset, this.limit));
     }
@@ -484,7 +497,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
   }
 
   @Override
-  public boolean expect(String expected, boolean ignoreCase) {
+  public boolean expectUnsafe(String expected, boolean ignoreCase) {
 
     int len = expected.length();
     for (int i = 0; i < len; i++) {
