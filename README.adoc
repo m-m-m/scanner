@@ -1,7 +1,8 @@
 image:https://m-m-m.github.io/logo.svg[logo,width="150",link="https://m-m-m.github.io"]
 
 image:https://img.shields.io/github/license/m-m-m/scanner.svg?label=License["Apache License, Version 2.0",link=https://github.com/m-m-m/scanner/blob/master/LICENSE]
-image:https://travis-ci.com/m-m-m/scanner.svg?branch=master["build-status",link="https://travis-ci.com/m-m-m/scanner"]
+image:https://github.com/m-m-m/scanner/actions/workflows/build.yml/badge.svg["Build Status",link="https://github.com/m-m-m/scanner/actions/workflows/build.yml"]
+
 
 = mmm-scanner
 
