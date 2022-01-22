@@ -210,7 +210,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   public void testReadUntilWithStopString() {
 
     // given
-    CharFilter filter = CharFilter.NEWLINE_FILTER;
+    CharFilter filter = CharFilter.NEWLINE;
     String string = "/* comment */\n" + //
         "  /*\n" + //
         "   *   Line  1.    \n" + //
@@ -341,11 +341,11 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     // when
     scanner = scanner(string);
     // then
-    assertThat(scanner.readUntil(CharFilter.NEWLINE_FILTER, true, "$", false, true)).isEqualTo("blabla_");
+    assertThat(scanner.readUntil(CharFilter.NEWLINE, true, "$", false, true)).isEqualTo("blabla_");
     // and when
     scanner = scanner(string, true);
     // then
-    assertThat(scanner.readUntil(CharFilter.NEWLINE_FILTER, true, "_$", false, true)).isEqualTo("blabla");
+    assertThat(scanner.readUntil(CharFilter.NEWLINE, true, "_$", false, true)).isEqualTo("blabla");
   }
 
   @Test
@@ -532,8 +532,8 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
 
     // given
     String string = "abc def  ghi";
-    CharFilter textFilter = CharFilter.ASCII_LETTER_FILTER;
-    CharFilter spaceFilter = CharFilter.WHITESPACE_FILTER;
+    CharFilter textFilter = CharFilter.LATIN_LETTER;
+    CharFilter spaceFilter = CharFilter.WHITESPACE;
     // when
     CharStreamScanner scanner = scanner(string);
     // then
@@ -632,13 +632,13 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     CharStreamScanner scanner = scanner(string);
     // then
     assertThat(scanner.expectUnsafe("public", false)).isTrue();
-    assertThat(scanner.expect('$')).isFalse();
-    assertThat(scanner.expect(' ')).isTrue();
+    assertThat(scanner.expectOne('$')).isFalse();
+    assertThat(scanner.expectOne(' ')).isTrue();
     assertThat(scanner.expectUnsafe("StATiC", true)).isTrue();
-    assertThat(scanner.expect(' ')).isTrue();
+    assertThat(scanner.expectOne(' ')).isTrue();
     assertThat(scanner.expectUnsafe("FINAL", false)).isFalse();
     assertThat(scanner.expectUnsafe("FINAL", true)).isTrue();
-    assertThat(scanner.expect(' ')).isTrue();
+    assertThat(scanner.expectOne(' ')).isTrue();
     assertThat(scanner.expectUnsafe("string", false)).isFalse();
     assertThat(scanner.expectUnsafe("String", false)).isTrue();
     assertThat(scanner.forceNext()).isEqualTo(' ');
@@ -654,7 +654,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     // given
     String string = "";
     CharScannerSyntaxBean syntax = new CharScannerSyntaxBean();
-    CharFilter filter = CharFilter.ACCEPT_ALL_FILTER;
+    CharFilter filter = CharFilter.ANY;
     // when
     CharStreamScanner scanner = scanner(string);
     // then
@@ -678,7 +678,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     assertThat(scanner.skipWhile(filter)).isEqualTo(0);
     assertThat(scanner.skipWhileAndPeek(filter)).isEqualTo('\0');
     assertThat(scanner.skipWhileAndPeek(filter, 10)).isEqualTo('\0');
-    assertThat(scanner.expect(' ')).isFalse();
+    assertThat(scanner.expectOne(' ')).isFalse();
     assertThat(scanner.expectUnsafe("Text", true)).isFalse();
   }
 
@@ -738,19 +738,19 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     CharStreamScanner scanner = scanner(string);
     // then
     assertThat(scanner.readJavaCharLiteral()).isEqualTo('a');
-    assertThat(scanner.expect('$')).isTrue();
+    assertThat(scanner.expectOne('$')).isTrue();
     assertThat(scanner.readJavaCharLiteral()).isEqualTo('\'');
-    assertThat(scanner.expect('$')).isTrue();
+    assertThat(scanner.expectOne('$')).isTrue();
     assertThat(scanner.readJavaCharLiteral()).isEqualTo('\\');
-    assertThat(scanner.expect('$')).isTrue();
+    assertThat(scanner.expectOne('$')).isTrue();
     assertThat(scanner.readJavaCharLiteral()).isEqualTo('\0');
-    assertThat(scanner.expect('$')).isTrue();
+    assertThat(scanner.expectOne('$')).isTrue();
     assertThat(scanner.readJavaCharLiteral()).isEqualTo('\'');
-    assertThat(scanner.expect('$')).isTrue();
+    assertThat(scanner.expectOne('$')).isTrue();
     assertThat(scanner.readJavaCharLiteral()).isEqualTo('~');
-    assertThat(scanner.expect('$')).isTrue();
+    assertThat(scanner.expectOne('$')).isTrue();
     assertThat(scanner.readJavaCharLiteral()).isEqualTo('•');
-    assertThat(scanner.expect('$')).isTrue();
+    assertThat(scanner.expectOne('$')).isTrue();
     assertThat(scanner.hasNext()).isFalse();
 
     // and given

@@ -4,9 +4,6 @@ package io.github.mmm.scanner;
 
 import org.junit.jupiter.api.Test;
 
-import io.github.mmm.scanner.CharSequenceScanner;
-import io.github.mmm.scanner.CharStreamScanner;
-
 /**
  * Test of {@link CharSequenceScanner}.
  */
@@ -51,16 +48,16 @@ public class CharSequenceScannerTest extends AbstractCharStreamScannerTest {
     CharSequenceScanner parser = new CharSequenceScanner(string);
     assertThat(parser.getCurrentIndex()).isEqualTo(0);
     assertThat(parser.getOriginalString()).isEqualTo(string);
-    assertThat(parser.toString()).isEqualTo(string);
+    assertThat(parser.toString()).isEqualTo("\n$^$\nstring");
     assertThat(parser.getLength()).isEqualTo(string.length());
     assertThat(parser.hasNext()).isTrue();
     assertThat(parser.peek()).isEqualTo('s');
     assertThat(parser.getCurrentIndex()).isEqualTo(0);
     assertThat(parser.next()).isEqualTo('s');
     assertThat(parser.getCurrentIndex()).isEqualTo(1);
-    assertThat(parser.toString()).isEqualTo("tring");
+    assertThat(parser.toString()).isEqualTo("s\n$^$\ntring");
     assertThat(parser.read(Integer.MAX_VALUE)).isEqualTo("tring");
-    assertThat(parser.toString()).isEmpty();
+    assertThat(parser.toString()).isEqualTo("string\n$^$\n");
   }
 
   @Test

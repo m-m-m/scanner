@@ -2,12 +2,23 @@
  * http://www.apache.org/licenses/LICENSE-2.0 */
 package io.github.mmm.scanner;
 
+import java.util.NoSuchElementException;
+
 import io.github.mmm.base.filter.CharFilter;
 
 /**
  * This is the interface for a scanner that can be used to parse a stream or sequence of characters.
  */
 public interface CharStreamScanner {
+
+  /**
+   * The NULL character {@code '\0'} used to indicate the end of stream (EOS).<br>
+   * ATTENTION: Do not confuse and mix {@code '\0'} with {@code '0'}.
+   *
+   * @see #forceNext()
+   * @see #forcePeek()
+   */
+  char EOS = '\0';
 
   /**
    * This method determines if there is at least one more character available.
@@ -19,34 +30,37 @@ public interface CharStreamScanner {
 
   /**
    * This method reads the current character and increments the index stepping to the next character. You need to
-   * {@link #hasNext() check} if a character is available before calling this method.
+   * {@link #hasNext() check} if a character is available before calling this method.<br/>
+   * ATTENTION: In most cases you should prefer to use {@link #forceNext()} instead of this method.
    *
    * @return the current character.
+   * @throws NoSuchElementException if no character is {@link #hasNext() available}.
    */
   char next();
 
   /**
    * Like {@link #next()} this method reads the current character and increments the index. If there is no character
-   * {@link #hasNext() available} this method will do nothing but return {@code '\0'} (the NULL character and NOT
-   * {@code '0'}).
+   * {@link #hasNext() available} this method will do nothing but return {@link #EOS}.
    *
-   * @return the current character or {@code 0} if none is {@link #hasNext() available}.
+   * @return the {@link #next()} character or {@link #EOS} if none is {@link #hasNext() available}.
    */
   char forceNext();
 
   /**
    * This method reads the current character without incrementing the index. You need to {@link #hasNext() check} if a
-   * character is available before calling this method.
+   * character is available before calling this method.<br/>
+   * ATTENTION: In most cases you should prefer to use {@link #forcePeek()} instead of this method.
    *
    * @return the current character.
+   * @throws NoSuchElementException if no character is {@link #hasNext() available}.
    */
   char peek();
 
   /**
    * This method reads the current character without incrementing the index. If there is no character {@link #hasNext()
-   * available} this method will return {@code 0} (the NULL character and NOT {@code '0'}).
+   * available} this method will return {@link #EOS}.
    *
-   * @return the current character or {@code 0} if none is {@link #hasNext() available}.
+   * @return the {@link #peek() current character} or {@link #EOS} if none is {@link #hasNext() available}.
    */
   char forcePeek();
 
@@ -213,7 +227,27 @@ public interface CharStreamScanner {
    * @return {@code true} if the {@code expected} string was successfully consumed from this scanner, {@code false}
    *         otherwise.
    */
-  boolean expectStrict(String expected, boolean ignoreCase);
+  default boolean expectStrict(String expected, boolean ignoreCase) {
+
+    return expectStrict(expected, ignoreCase, false);
+  }
+
+  /**
+   * This method acts as {@link #expectUnsafe(String, boolean)} but if the expected String is NOT completely present, no
+   * character is {@link #next() consumed} and the state of the scanner remains unchanged.<br>
+   * <b>Attention:</b><br>
+   * This method requires lookahead. For implementations that are backed by an underlying stream (or reader) the
+   * {@link String#length() length} of the expected {@link String} shall not exceed the available lookahead size (buffer
+   * capacity given at construction time). Otherwise the method may fail.
+   *
+   * @param expected is the expected string.
+   * @param ignoreCase - if {@code true} the case of the characters is ignored when compared.
+   * @param lookahead - if {@code true} the state of the scanner remains unchanged even if the expected {@link String}
+   *        has been found, {@code false} otherwise.
+   * @return {@code true} if the {@code expected} string was successfully consumed from this scanner, {@code false}
+   *         otherwise.
+   */
+  boolean expectStrict(String expected, boolean ignoreCase, boolean lookahead);
 
   /**
    * This method checks that the {@link #next() current character} is equal to the given {@code expected} character.
@@ -224,7 +258,27 @@ public interface CharStreamScanner {
    * @param expected is the expected character.
    * @return {@code true} if the current character is the same as {@code expected}, {@code false} otherwise.
    */
-  boolean expect(char expected);
+  boolean expectOne(char expected);
+
+  /**
+   * This method verifies that the {@link #next() current character} is equal to the given {@code expected} character.
+   * <br>
+   * If the current character was as expected, the parser points to the next character. Otherwise an exception is thrown
+   * indicating the problem.
+   *
+   * @param expected is the expected character.
+   */
+  default void requireOne(char expected) {
+
+    if (!hasNext()) {
+      throw new IllegalStateException("Expecting '" + expected + "' but found end-of-stream.");
+    }
+    char next = peek();
+    if (next != expected) {
+      throw new IllegalStateException("Expecting '" + expected + "' but found: " + next);
+    }
+    next();
+  }
 
   /**
    * This method verifies that the {@code expected} string gets consumed from this scanner with respect to
@@ -232,7 +286,7 @@ public interface CharStreamScanner {
    * This method behaves functionally equivalent to the following code:
    *
    * <pre>
-   * if (!scanner.{@link #expectStrict(String, boolean) expectStrict}(expected, ignoreCase)) {
+   * if (!scanner.{@link #expectUnsafe(String, boolean) expectUnsafe}(expected, ignoreCase)) {
    *   throw new {@link IllegalStateException}(...);
    * }
    * </pre>
@@ -243,14 +297,82 @@ public interface CharStreamScanner {
   void require(String expected, boolean ignoreCase);
 
   /**
-   * This method verifies that the {@link #next() current character} is equal to the given {@code expected} character.
-   * <br>
-   * If the current character was as expected, the parser points to the next character. Otherwise an exception is thrown
-   * indicating the problem.
-   *
-   * @param expected is the expected character.
+   * @param filter the {@link CharFilter} {@link CharFilter#accept(char) accepting} the expected characters to
+   *        {@link #skipWhile(CharFilter, int) skip}.
+   * @return the actual number of characters that have been skipped.
+   * @throws IllegalStateException if less than {@code 1} or more than {@code 1000} {@link CharFilter#accept(char)
+   *         accepted} characters have been consumed.
    */
-  void require(char expected);
+  default int requireOne(CharFilter filter) {
+
+    return require(filter, 1, -1);
+  }
+
+  /**
+   * @param filter the {@link CharFilter} {@link CharFilter#accept(char) accepting} the expected characters to
+   *        {@link #skipWhile(CharFilter, int) skip}.
+   * @return the actual number of characters that have been skipped.
+   * @throws IllegalStateException if less than {@code 1} or more than {@code 1000} {@link CharFilter#accept(char)
+   *         accepted} characters have been consumed.
+   */
+  default int requireOneOrMore(CharFilter filter) {
+
+    return require(filter, 1);
+  }
+
+  /**
+   * @param filter the {@link CharFilter} {@link CharFilter#accept(char) accepting} the expected characters to
+   *        {@link #skipWhile(CharFilter, int) skip}.
+   * @param min the minimum required number of skipped characters.
+   * @return the actual number of characters that have been skipped.
+   * @throws IllegalStateException if less than {@code min} or more than {@code 1000} {@link CharFilter#accept(char)
+   *         accepted} characters have been consumed.
+   */
+  default int require(CharFilter filter, int min) {
+
+    return require(filter, min, 1000);
+  }
+
+  /**
+   * @param filter the {@link CharFilter} {@link CharFilter#accept(char) accepting} the expected characters to
+   *        {@link #skipWhile(CharFilter, int) skip}.
+   * @param min the minimum required number of skipped characters.
+   * @param max the maximum number of skipped characters.
+   * @return the actual number of characters that have been skipped.
+   * @throws IllegalStateException if less than {@code min} or more than {@code max} {@link CharFilter#accept(char)
+   *         accepted} characters have been consumed.
+   */
+  default int require(CharFilter filter, int min, int max) {
+
+    if ((min < 0) || ((min > max) && (max != -1))) {
+      throw new IllegalArgumentException("Invalid range: " + min + "-" + max);
+    }
+    int num = max;
+    if (max == -1) {
+      num = min;
+    }
+    int count = skipWhile(filter, num);
+    if (count < min) {
+      invalidCharCount("at least " + min, count, filter);
+    }
+    if (count == max) {
+      char c = forcePeek();
+      if (!filter.accept(c)) {
+        invalidCharCount("up to " + max, count, filter);
+      }
+    }
+    return count;
+  }
+
+  private IllegalStateException invalidCharCount(String bound, int count, CharFilter filter) {
+
+    String description = filter.getDescription();
+    String chars = " character(s)";
+    if (!CharFilter.NO_DESCRIPTION.equals(description)) {
+      chars = " character(s) matching " + description;
+    }
+    throw new IllegalStateException("Require " + bound + chars + " but found only " + count);
+  }
 
   /**
    * This method skips all {@link #next() next characters} until the given {@code stop} character or the end is reached.
@@ -731,5 +853,17 @@ public interface CharStreamScanner {
    *        exception in such case.
    */
   Character readJavaCharLiteral(boolean tolerant);
+
+  /**
+   * @return the {@link String} with the characters that have already been parsed but are still available in the
+   *         underlying buffer. May be used for debugging or error messages.
+   */
+  String getBufferParsed();
+
+  /**
+   * @return the {@link String} with the characters that have not yet been parsed but are available in the underlying
+   *         buffer. May be used for debugging or error messages.
+   */
+  String getBufferToParse();
 
 }

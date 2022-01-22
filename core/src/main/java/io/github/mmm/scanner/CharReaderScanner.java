@@ -196,7 +196,7 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
   }
 
   @Override
-  public boolean expectStrict(String expected, boolean ignoreCase) {
+  public boolean expectStrict(String expected, boolean ignoreCase, boolean lookahead) {
 
     int expectedLength = expected.length();
     if (expectedLength == 0) {
@@ -244,10 +244,12 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
         myLimit = this.lookaheadLimit;
       }
     }
-    if (myBuffer == this.lookaheadBuffer) {
-      shiftLookahead();
+    if (!lookahead) {
+      if (myBuffer == this.lookaheadBuffer) {
+        shiftLookahead();
+      }
+      this.offset = myOffset;
     }
-    this.offset = myOffset;
     return true;
   }
 

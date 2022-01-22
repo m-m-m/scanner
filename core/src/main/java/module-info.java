@@ -63,7 +63,7 @@
  * }
  * scanner.{@link io.github.mmm.scanner.CharStreamScanner#skipWhile(char) skipWhile}(' ');
  * String value = scanner.{@link io.github.mmm.scanner.CharStreamScanner#readWhile(io.github.mmm.base.filter.CharFilter)
- * readWhile}({@link io.github.mmm.base.filter.CharFilter#LATIN_DIGIT_FILTER});
+ * readWhile}({@link io.github.mmm.base.filter.CharFilter#LATIN_DIGIT});
  * </pre>
  *
  * This is just a simple example. The API offers all real-live scenarios you will need to parse your data. The

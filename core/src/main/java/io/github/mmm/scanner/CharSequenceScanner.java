@@ -293,7 +293,7 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
   }
 
   @Override
-  public boolean expectStrict(String expected, boolean ignoreCase) {
+  public boolean expectStrict(String expected, boolean ignoreCase, boolean lookahead) {
 
     int len = expected.length();
     int newPos = this.offset;
@@ -313,7 +313,9 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
       }
       newPos++;
     }
-    this.offset = newPos;
+    if (!lookahead) {
+      this.offset = newPos;
+    }
     return true;
   }
 
