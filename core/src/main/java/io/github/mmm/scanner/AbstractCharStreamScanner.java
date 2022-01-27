@@ -504,6 +504,19 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
   }
 
   @Override
+  public boolean expectOne(CharFilter expected) {
+
+    if (!hasNext()) {
+      return false;
+    }
+    if (expected.accept(this.buffer[this.offset])) {
+      this.offset++;
+      return true;
+    }
+    return false;
+  }
+
+  @Override
   public boolean expectUnsafe(String expected, boolean ignoreCase) {
 
     int len = expected.length();

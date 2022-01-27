@@ -261,6 +261,27 @@ public interface CharStreamScanner {
   boolean expectOne(char expected);
 
   /**
+   * This method checks that the {@link #next() current character} is {@link CharFilter#accept(char) accepted} by the
+   * given {@link CharFilter}. <br>
+   * If the current character was as expected, the parser points to the next character. Otherwise its position will
+   * remain unchanged.
+   *
+   * @param expected is the {@link CharFilter} {@link CharFilter#accept(char) accepting} the expected chars.
+   * @return {@code true} if the current character is {@link CharFilter#accept(char) accepted}, {@code false} otherwise.
+   */
+  default boolean expectOne(CharFilter expected) {
+
+    if (!hasNext()) {
+      return false;
+    }
+    if (expected.accept(peek())) {
+      next();
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * This method verifies that the {@link #next() current character} is equal to the given {@code expected} character.
    * <br>
    * If the current character was as expected, the parser points to the next character. Otherwise an exception is thrown
