@@ -156,7 +156,7 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
 
   /**
    * This method gets the current position in the stream to scan. It will initially be {@code 0}. In other words this
-   * method returns the number of characters that have already been {@link #next() consumed}.
+   * method returns the number of characters that have already been {@link #nextStrict() consumed}.
    *
    * @return the current index position.
    */
@@ -190,12 +190,6 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
   @Override
   public char next() {
 
-    return this.buffer[this.offset++];
-  }
-
-  @Override
-  public char forceNext() {
-
     if (this.offset < this.limit) {
       return this.buffer[this.offset++];
     } else {
@@ -206,12 +200,6 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
   @Override
   public char peek() {
 
-    return this.buffer[this.offset];
-  }
-
-  @Override
-  public char forcePeek() {
-
     if (this.offset < this.limit) {
       return this.buffer[this.offset];
     } else {
@@ -220,10 +208,10 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
   }
 
   /**
-   * This method peeks the number of {@link #peek() next characters} given by {@code count} and returns them as string.
-   * If there are less characters {@link #hasNext() available} the returned string will be shorter than {@code count}
-   * and only contain the available characters. Unlike {@link #read(int)} this method does NOT consume the characters
-   * and will therefore NOT change the state of this scanner.
+   * This method peeks the number of {@link #peekStrict() next characters} given by {@code count} and returns them as
+   * string. If there are less characters {@link #hasNext() available} the returned string will be shorter than
+   * {@code count} and only contain the available characters. Unlike {@link #read(int)} this method does NOT consume the
+   * characters and will therefore NOT change the state of this scanner.
    *
    * @param count is the number of characters to peek. You may use {@link Integer#MAX_VALUE} to peek until the end of
    *        text (EOT) if the data-size is suitable.

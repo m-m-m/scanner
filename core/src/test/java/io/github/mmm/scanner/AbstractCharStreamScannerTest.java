@@ -517,14 +517,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
       assertThat(c).isEqualTo(expected);
     }
     assertThat(scanner.hasNext()).isFalse();
-    // and when
-    try {
-      scanner.next();
-      failBecauseExceptionWasNotThrown(Exception.class);
-    } catch (Exception e) {
-    }
-    // then
-    assertThat(scanner.forceNext()).isEqualTo('\0');
+    assertThat(scanner.next()).isEqualTo('\0');
   }
 
   @Test
@@ -608,19 +601,17 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     CharStreamScanner scanner = scanner(string);
     // then
     assertThat(scanner.peek()).isEqualTo('a');
-    assertThat(scanner.forcePeek()).isEqualTo('a');
+    assertThat(scanner.peek()).isEqualTo('a');
     assertThat(scanner.next()).isEqualTo('a');
 
     assertThat(scanner.peek()).isEqualTo('b');
-    assertThat(scanner.forcePeek()).isEqualTo('b');
-    assertThat(scanner.forceNext()).isEqualTo('b');
+    assertThat(scanner.next()).isEqualTo('b');
 
     assertThat(scanner.peek()).isEqualTo('c');
-    assertThat(scanner.forcePeek()).isEqualTo('c');
     assertThat(scanner.next()).isEqualTo('c');
 
-    assertThat(scanner.forcePeek()).isEqualTo('\0');
-    assertThat(scanner.forceNext()).isEqualTo('\0');
+    assertThat(scanner.peek()).isEqualTo('\0');
+    assertThat(scanner.next()).isEqualTo('\0');
   }
 
   @Test
@@ -641,10 +632,10 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     assertThat(scanner.expectOne(' ')).isTrue();
     assertThat(scanner.expectUnsafe("string", false)).isFalse();
     assertThat(scanner.expectUnsafe("String", false)).isTrue();
-    assertThat(scanner.forceNext()).isEqualTo(' ');
+    assertThat(scanner.next()).isEqualTo(' ');
     assertThat(scanner.expectUnsafe("banana", true)).isFalse();
     assertThat(scanner.expectUnsafe("foo", false)).isTrue();
-    assertThat(scanner.forceNext()).isEqualTo(';');
+    assertThat(scanner.next()).isEqualTo(';');
     assertThat(scanner.hasNext()).isFalse();
   }
 
@@ -658,8 +649,8 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     // when
     CharStreamScanner scanner = scanner(string);
     // then
-    assertThat(scanner.forcePeek()).isEqualTo('\0');
-    assertThat(scanner.forceNext()).isEqualTo('\0');
+    assertThat(scanner.peek()).isEqualTo('\0');
+    assertThat(scanner.next()).isEqualTo('\0');
     assertThat(scanner.readDigit()).isEqualTo(-1);
     assertThat(scanner.read(1)).isEmpty();
     assertThat(scanner.readLine()).isNull();

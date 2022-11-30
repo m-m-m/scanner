@@ -2,8 +2,6 @@
  * http://www.apache.org/licenses/LICENSE-2.0 */
 package io.github.mmm.scanner;
 
-import java.util.NoSuchElementException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -190,29 +188,11 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     if (hasNext()) {
       return this.buffer[this.offset++];
     }
-    throw new NoSuchElementException();
-  }
-
-  @Override
-  public char forceNext() {
-
-    if (hasNext()) {
-      return this.buffer[this.offset++];
-    }
     return 0;
   }
 
   @Override
   public char peek() {
-
-    if (hasNext()) {
-      return this.buffer[this.offset];
-    }
-    throw new NoSuchElementException();
-  }
-
-  @Override
-  public char forcePeek() {
 
     if (hasNext()) {
       return this.buffer[this.offset];
@@ -629,10 +609,10 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
 
     if (expectOne('\'')) {
       StringBuilder error = null;
-      char c = forceNext();
+      char c = next();
       char next = 0;
       if (c == '\\') {
-        c = forceNext();
+        c = next();
         if (c == 'u') {
           c = parseUnicodeEscapeSequence(tolerant);
           if (expectOne('\'')) {
@@ -640,7 +620,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
           }
           error = createUnicodeLiteralError(c);
         } else {
-          next = forceNext();
+          next = next();
           if (next == '\'') {
             Character character = CharEscapeHelper.resolveEscape(c);
             if (character != null) {
@@ -648,10 +628,10 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
             }
           } else if (CharFilter.OCTAL_DIGIT.accept(c) && CharFilter.OCTAL_DIGIT.accept(next)) {
             int value = ((c - '0') * 8) + (next - '0');
-            char last = forceNext();
+            char last = next();
             if (CharFilter.OCTAL_DIGIT.accept(last) && (value <= 37)) {
               value = (value * 8) + (last - '0');
-              last = forceNext();
+              last = next();
             }
             if (last == '\'') {
               return Character.valueOf((char) value);
@@ -711,18 +691,18 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
 
   private void parseEscapeSequence(StringBuilder builder, boolean tolerant) {
 
-    char c = forceNext();
+    char c = next();
     if (c == 'u') { // unicode
       char value = parseUnicodeEscapeSequence(tolerant);
       builder.append(value);
     } else if (CharFilter.OCTAL_DIGIT.accept(c)) { // octal C legacy stuff
       int value = c - '0';
-      c = forcePeek();
+      c = peek();
       if (CharFilter.OCTAL_DIGIT.accept(c)) {
         next();
         value = (8 * value) + (c - '0');
         if (value <= 31) {
-          c = forcePeek();
+          c = peek();
           if (CharFilter.OCTAL_DIGIT.accept(c)) {
             next();
             value = (8 * value) + (c - '0');

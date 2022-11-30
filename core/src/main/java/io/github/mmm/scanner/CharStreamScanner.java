@@ -2,8 +2,6 @@
  * http://www.apache.org/licenses/LICENSE-2.0 */
 package io.github.mmm.scanner;
 
-import java.util.NoSuchElementException;
-
 import io.github.mmm.base.filter.CharFilter;
 
 /**
@@ -15,8 +13,8 @@ public interface CharStreamScanner {
    * The NULL character {@code '\0'} used to indicate the end of stream (EOS).<br>
    * ATTENTION: Do not confuse and mix {@code '\0'} with {@code '0'}.
    *
-   * @see #forceNext()
-   * @see #forcePeek()
+   * @see #next()
+   * @see #peek()
    */
   char EOS = '\0';
 
@@ -29,40 +27,21 @@ public interface CharStreamScanner {
   boolean hasNext();
 
   /**
-   * This method reads the current character and increments the index stepping to the next character. You need to
-   * {@link #hasNext() check} if a character is available before calling this method.<br/>
-   * ATTENTION: In most cases you should prefer to use {@link #forceNext()} instead of this method.
+   * This method reads the current character from the stream and increments the index stepping to the next character.
+   * You should {@link #hasNext() check} if a character is available before calling this method. Otherwise if your
+   * stream may contain the NUL character ('\0') you can not distinguish if the end of the stream was reached or you
+   * actually read the NUL character.
    *
-   * @return the current character.
-   * @throws NoSuchElementException if no character is {@link #hasNext() available}.
+   * @return the {@link #next()} character or {@link #EOS} if none is {@link #hasNext() available}.
    */
   char next();
 
   /**
-   * Like {@link #next()} this method reads the current character and increments the index. If there is no character
-   * {@link #hasNext() available} this method will do nothing but return {@link #EOS}.
+   * This method reads the current character without incrementing the index.
    *
-   * @return the {@link #next()} character or {@link #EOS} if none is {@link #hasNext() available}.
-   */
-  char forceNext();
-
-  /**
-   * This method reads the current character without incrementing the index. You need to {@link #hasNext() check} if a
-   * character is available before calling this method.<br/>
-   * ATTENTION: In most cases you should prefer to use {@link #forcePeek()} instead of this method.
-   *
-   * @return the current character.
-   * @throws NoSuchElementException if no character is {@link #hasNext() available}.
+   * @return the current character or {@link #EOS} if none is {@link #hasNext() available}.
    */
   char peek();
-
-  /**
-   * This method reads the current character without incrementing the index. If there is no character {@link #hasNext()
-   * available} this method will return {@link #EOS}.
-   *
-   * @return the {@link #peek() current character} or {@link #EOS} if none is {@link #hasNext() available}.
-   */
-  char forcePeek();
 
   /**
    * @return the position in the sequence to scan or in other words the number of bytes that have been read. Will
@@ -75,7 +54,7 @@ public interface CharStreamScanner {
    * This method reads the {@link #next() next character} if it is a digit. Else the state remains unchanged.
    *
    * @return the numeric value of the next Latin digit (e.g. {@code 0} if {@code '0'}) or {@code -1} if the
-   *         {@link #peek() current character} is no Latin digit.
+   *         {@link #next() next character} is no Latin digit.
    */
   default int readDigit() {
 
@@ -89,8 +68,8 @@ public interface CharStreamScanner {
    * @param radix the radix that defines the range of the digits. See {@link Integer#parseInt(String, int)}. E.g.
    *        {@code 10} to read any Latin digit (see {@link #readDigit()}), {@code 8} to read octal digit, {@code 16} to
    *        read hex decimal digits.
-   * @return the numeric value of the next digit within the given {@code radix} or {@code -1} if the {@link #peek()
-   *         current character} is no such digit.
+   * @return the numeric value of the next digit within the given {@code radix} or {@code -1} if the {@link #next() next
+   *         character} is no such digit.
    */
   int readDigit(int radix);
 
@@ -250,8 +229,7 @@ public interface CharStreamScanner {
   boolean expectStrict(String expected, boolean ignoreCase, boolean lookahead);
 
   /**
-   * This method checks that the {@link #next() current character} is equal to the given {@code expected} character.
-   * <br>
+   * This method checks that the {@link #next() next character} is equal to the given {@code expected} character. <br>
    * If the current character was as expected, the parser points to the next character. Otherwise its position will
    * remain unchanged.
    *
@@ -261,8 +239,8 @@ public interface CharStreamScanner {
   boolean expectOne(char expected);
 
   /**
-   * This method checks that the {@link #next() current character} is {@link CharFilter#accept(char) accepted} by the
-   * given {@link CharFilter}. <br>
+   * This method checks that the {@link #next() next character} is {@link CharFilter#accept(char) accepted} by the given
+   * {@link CharFilter}. <br>
    * If the current character was as expected, the parser points to the next character. Otherwise its position will
    * remain unchanged.
    *
@@ -282,8 +260,7 @@ public interface CharStreamScanner {
   }
 
   /**
-   * This method verifies that the {@link #next() current character} is equal to the given {@code expected} character.
-   * <br>
+   * This method verifies that the {@link #next() next character} is equal to the given {@code expected} character. <br>
    * If the current character was as expected, the parser points to the next character. Otherwise an exception is thrown
    * indicating the problem.
    *
@@ -377,7 +354,7 @@ public interface CharStreamScanner {
       invalidCharCount("at least " + min, count, filter);
     }
     if (count == max) {
-      char c = forcePeek();
+      char c = peek();
       if (!filter.accept(c)) {
         invalidCharCount("up to " + max, count, filter);
       }
@@ -531,7 +508,7 @@ public interface CharStreamScanner {
    * <pre>
    * {@link CharStreamScanner} scanner = getScanner();
    * doSomething();
-   * char c = scanner.{@link #forceNext()};
+   * char c = scanner.{@link #next()};
    * if ((c == '"') || (c == '\'')) {
    *   char escape = c; // may also be something like '\'
    *   String quote = scanner.{@link #readUntil(char, boolean, char) readUntil}(c, false, escape)
@@ -727,7 +704,7 @@ public interface CharStreamScanner {
    *
    * <pre>
    * {@link #skipWhile(CharFilter) skipWhile}(filter);
-   * return {@link #forcePeek()};
+   * return {@link #peek()};
    * </pre>
    *
    * @param filter is used to {@link CharFilter#accept(char) decide} which characters should be accepted.
@@ -745,7 +722,7 @@ public interface CharStreamScanner {
    *
    * <pre>
    * {@link #skipWhile(CharFilter, int) skipWhile}(filter, max);
-   * return {@link #forcePeek()};
+   * return {@link #peek()};
    * </pre>
    *
    * @param filter is used to {@link CharFilter#accept(char) decide} which characters should be accepted.
@@ -757,7 +734,7 @@ public interface CharStreamScanner {
   default char skipWhileAndPeek(CharFilter filter, int max) {
 
     skipWhile(filter, max);
-    return forcePeek();
+    return peek();
   }
 
   /**
