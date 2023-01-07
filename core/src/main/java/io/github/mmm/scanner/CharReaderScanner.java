@@ -5,17 +5,13 @@ package io.github.mmm.scanner;
 import java.io.IOException;
 import java.io.Reader;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.github.mmm.base.text.CaseHelper;
+import io.github.mmm.base.text.TextFormatMessageHandler;
 
 /**
  * Implementation of {@link CharStreamScanner} that adapts a {@link Reader} to read and parse textual data.
  */
 public class CharReaderScanner extends AbstractCharStreamScanner {
-
-  private static final Logger LOG = LoggerFactory.getLogger(CharReaderScanner.class);
 
   private Reader reader;
 
@@ -31,7 +27,17 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
    */
   public CharReaderScanner() {
 
-    this(4096);
+    this(null, null);
+  }
+
+  /**
+   * The constructor.
+   *
+   * @param messageHandler the {@link TextFormatMessageHandler}.
+   */
+  public CharReaderScanner(TextFormatMessageHandler messageHandler) {
+
+    this(messageHandler, null);
   }
 
   /**
@@ -41,8 +47,18 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
    */
   public CharReaderScanner(Reader reader) {
 
-    this();
-    this.reader = reader;
+    this(null, reader);
+  }
+
+  /**
+   * The constructor.
+   *
+   * @param messageHandler the {@link TextFormatMessageHandler}.
+   * @param reader the (initial) {@link Reader}.
+   */
+  public CharReaderScanner(TextFormatMessageHandler messageHandler, Reader reader) {
+
+    this(4096, messageHandler, reader);
   }
 
   /**
@@ -52,7 +68,18 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
    */
   public CharReaderScanner(int capacity) {
 
-    super(capacity);
+    this(capacity, null, null);
+  }
+
+  /**
+   * The constructor.
+   *
+   * @param capacity the buffer capacity.
+   * @param messageHandler the {@link TextFormatMessageHandler}.
+   */
+  public CharReaderScanner(int capacity, TextFormatMessageHandler messageHandler) {
+
+    this(capacity, messageHandler, null);
   }
 
   /**
@@ -63,7 +90,19 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
    */
   public CharReaderScanner(int capacity, Reader reader) {
 
-    this(capacity);
+    this(capacity, null, reader);
+  }
+
+  /**
+   * The constructor.
+   *
+   * @param capacity the buffer capacity.
+   * @param messageHandler the {@link TextFormatMessageHandler}.
+   * @param reader the (initial) {@link Reader}.
+   */
+  public CharReaderScanner(int capacity, TextFormatMessageHandler messageHandler, Reader reader) {
+
+    super(capacity, messageHandler);
     this.reader = reader;
   }
 
@@ -71,6 +110,67 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
   public int getPosition() {
 
     return this.position + this.offset;
+  }
+
+  @Override
+  public char peek(int lookaheadOffset) {
+
+    if (hasNext()) {
+      int i = this.offset + lookaheadOffset;
+      if (i < this.limit) {
+        return this.buffer[i];
+      }
+      if (fillLookahead()) {
+        i = i - this.limit;
+        if (i < this.lookaheadLimit) {
+          return this.lookaheadBuffer[i];
+        } else {
+          throwLookaheadError(lookaheadOffset);
+        }
+      }
+    }
+    return 0;
+  }
+
+  @Override
+  public String peekString(int count) {
+
+    if (!hasNext()) {
+      return "";
+    }
+    int rest = this.limit - this.offset;
+    if (rest >= count) {
+      return new String(this.buffer, this.offset, count);
+    } else if (fillLookahead()) {
+      int fullRest = rest + this.lookaheadLimit;
+      if ((count > fullRest) && !isEos()) {
+        throwLookaheadError(count);
+      }
+      StringBuilder sb = new StringBuilder(fullRest);
+      sb.append(this.buffer, this.offset, rest);
+      sb.append(this.lookaheadBuffer, 0, count - rest);
+      return sb.toString();
+    } else {
+      return new String(this.buffer, this.offset, rest);
+    }
+  }
+
+  @Override
+  public String getBufferToParse() {
+
+    if (this.offset < this.limit) {
+      int count = this.limit - this.offset;
+      if (this.lookaheadLimit > 0) {
+        StringBuilder sb = new StringBuilder(this.lookaheadLimit + count);
+        sb.append(this.buffer, this.offset, count);
+        sb.append(this.lookaheadBuffer, 0, this.lookaheadLimit);
+        return sb.toString();
+      } else {
+        return new String(this.buffer, this.offset, count);
+      }
+    } else {
+      return "";
+    }
   }
 
   /**
@@ -97,6 +197,7 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
       this.limit = this.offset;
       return false;
     }
+    setOffset(this.limit);
     this.position += this.limit;
     this.offset = 0;
     try {
@@ -145,9 +246,11 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
   private void shiftLookahead() {
 
     this.position += this.limit;
+    setOffset(this.limit);
     char[] tmp = this.lookaheadBuffer;
     this.lookaheadBuffer = this.buffer;
     this.buffer = tmp;
+    this.offset = 0;
     this.limit = this.lookaheadLimit;
     this.lookaheadLimit = 0;
   }
@@ -202,14 +305,16 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
     if (expectedLength == 0) {
       return true;
     }
-    if (!isEos()) {
-      verifyLookahead(expected);
-    }
     if (!hasNext()) {
       return false;
     }
-    if (!isEos() && (this.offset + expectedLength > this.limit)) {
-      return false;
+    if (isEos()) {
+      int rest = this.lookaheadLimit + (this.limit - this.offset);
+      if (expectedLength > rest) {
+        return false;
+      }
+    } else {
+      verifyLookahead(expectedLength);
     }
     char[] expectedChars;
     if (ignoreCase) {
@@ -248,19 +353,23 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
       if (myBuffer == this.lookaheadBuffer) {
         shiftLookahead();
       }
-      this.offset = myOffset;
+      setOffset(myOffset);
     }
     return true;
   }
 
   @Override
-  protected void verifyLookahead(String substring) {
+  protected void verifyLookahead(int length) {
 
-    int subLength = substring.length();
-    if (subLength > this.buffer.length) {
-      throw new IllegalArgumentException(
-          "The string '" + substring + "' exceeds the available lookahead buffer size: " + this.buffer.length);
+    if (length > this.buffer.length) {
+      throwLookaheadError(length);
     }
+  }
+
+  private void throwLookaheadError(int length) {
+
+    throw new IllegalArgumentException(
+        "Lookahead size of " + length + " characters exceeds the configured buffer size of " + this.buffer.length);
   }
 
   @Override
@@ -272,7 +381,7 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
       if (myCharsIndex == this.limit) { // lookahead required?
         if (!fillLookahead()) {
           if (skip) {
-            this.offset = this.limit;
+            setOffset(this.limit);
           }
           return false;
         }
@@ -289,7 +398,7 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
         }
         if (skip) {
           shiftLookahead();
-          this.offset = lookaheadIndex;
+          setOffset(lookaheadIndex);
         }
         return true;
       } else {
@@ -301,7 +410,7 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
       }
     }
     if (skip) {
-      this.offset = myCharsIndex;
+      setOffset(myCharsIndex);
     }
     return true;
   }

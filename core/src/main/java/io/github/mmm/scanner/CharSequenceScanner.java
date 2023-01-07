@@ -3,9 +3,10 @@
 package io.github.mmm.scanner;
 
 import io.github.mmm.base.filter.CharFilter;
+import io.github.mmm.base.text.TextFormatMessageHandler;
 
 /**
- * This class represents a {@link String} or better a sequence of characters ( {@code char[]}) together with a
+ * This class represents a {@link String} or better a sequence of characters ({@code char[]}) together with a
  * {@link #getCurrentIndex() position} in that sequence. <br>
  * It has various useful methods for scanning the sequence. This scanner is designed to be fast on long sequences and
  * therefore internally {@link String#toCharArray() converts} {@link String}s to a char array instead of frequently
@@ -29,7 +30,18 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
    */
   public CharSequenceScanner(CharSequence charSequence) {
 
-    this(charSequence.toString());
+    this(charSequence, null);
+  }
+
+  /**
+   * The constructor.
+   *
+   * @param charSequence is the {@link #getOriginalString() string} to scan.
+   * @param messageHandler the {@link TextFormatMessageHandler}.
+   */
+  public CharSequenceScanner(CharSequence charSequence, TextFormatMessageHandler messageHandler) {
+
+    this(charSequence.toString(), messageHandler);
   }
 
   /**
@@ -39,7 +51,18 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
    */
   public CharSequenceScanner(String string) {
 
-    this(string.toCharArray());
+    this(string, null);
+  }
+
+  /**
+   * The constructor.
+   *
+   * @param string is the {@link #getOriginalString() string} to parse.
+   * @param messageHandler the {@link TextFormatMessageHandler}.
+   */
+  public CharSequenceScanner(String string, TextFormatMessageHandler messageHandler) {
+
+    this(string.toCharArray(), messageHandler);
     this.string = string;
   }
 
@@ -50,7 +73,18 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
    */
   public CharSequenceScanner(char[] characters) {
 
-    this(characters, 0, characters.length);
+    this(characters, null);
+  }
+
+  /**
+   * The constructor.
+   *
+   * @param characters is an array containing the characters to scan.
+   * @param messageHandler the {@link TextFormatMessageHandler}.
+   */
+  public CharSequenceScanner(char[] characters, TextFormatMessageHandler messageHandler) {
+
+    this(characters, 0, characters.length, messageHandler);
   }
 
   /**
@@ -64,7 +98,22 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
    */
   public CharSequenceScanner(char[] characters, int offset, int length) {
 
-    super(characters);
+    this(characters, offset, length, null);
+  }
+
+  /**
+   * The constructor.
+   *
+   * @param characters is an array containing the characters to scan.
+   * @param offset is the index of the first char to scan in {@code characters} (typically {@code 0} to start at the
+   *        beginning of the array).
+   * @param length is the {@link #getLength() number of characters} to scan from {@code characters} starting at
+   *        {@code offset} (typically <code>characters.length - offset</code>).
+   * @param messageHandler the {@link TextFormatMessageHandler}.
+   */
+  public CharSequenceScanner(char[] characters, int offset, int length, TextFormatMessageHandler messageHandler) {
+
+    super(characters, messageHandler);
     if (offset < 0) {
       throw new IndexOutOfBoundsException(Integer.toString(offset));
     }
@@ -75,7 +124,6 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
       throw new IndexOutOfBoundsException(Integer.toString(offset + length));
     }
     this.offset = offset;
-    // this.length = length;
     this.initialOffset = offset;
     this.limit = offset + length;
     this.offset = this.initialOffset;
@@ -156,7 +204,7 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
 
   /**
    * This method gets the current position in the stream to scan. It will initially be {@code 0}. In other words this
-   * method returns the number of characters that have already been {@link #nextStrict() consumed}.
+   * method returns the number of characters that have already been {@link #next() consumed}.
    *
    * @return the current index position.
    */
@@ -191,7 +239,7 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
   public char next() {
 
     if (this.offset < this.limit) {
-      return this.buffer[this.offset++];
+      return handleChar(this.buffer[this.offset++]);
     } else {
       return 0;
     }
@@ -207,18 +255,31 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
     }
   }
 
+  @Override
+  public char peek(int lookaheadOffset) {
+
+    int i = this.offset + lookaheadOffset;
+    if ((i < this.limit) && (i >= this.initialOffset)) {
+      if (i < this.limit) {
+        return this.buffer[i];
+      }
+    }
+    return 0;
+  }
+
   /**
-   * This method peeks the number of {@link #peekStrict() next characters} given by {@code count} and returns them as
-   * string. If there are less characters {@link #hasNext() available} the returned string will be shorter than
-   * {@code count} and only contain the available characters. Unlike {@link #read(int)} this method does NOT consume the
-   * characters and will therefore NOT change the state of this scanner.
+   * This method peeks the number of {@link #peek() next characters} given by {@code count} and returns them as string.
+   * If there are less characters {@link #hasNext() available} the returned string will be shorter than {@code count}
+   * and only contain the available characters. Unlike {@link #read(int)} this method does NOT consume the characters
+   * and will therefore NOT change the state of this scanner.
    *
    * @param count is the number of characters to peek. You may use {@link Integer#MAX_VALUE} to peek until the end of
    *        text (EOT) if the data-size is suitable.
    * @return a string with the given number of characters or all available characters if less than {@code count}. Will
    *         be the empty string if no character is {@link #hasNext() available} at all.
    */
-  public String peek(int count) {
+  @Override
+  public String peekString(int count) {
 
     int len = this.limit - this.offset;
     if (len > count) {
@@ -228,26 +289,16 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
     return result;
   }
 
-  /**
-   * This method decrements the {@link #getCurrentIndex() index} by one. If the {@link #getCurrentIndex() index} is
-   * {@code 0} this method will have no effect. <br>
-   * E.g. use this method if you read a character too much.
-   */
-  public void stepBack() {
-
-    if (this.offset > this.initialOffset) {
-      this.offset--;
-    }
-  }
-
   @Override
   public String readUntil(CharFilter filter, boolean acceptEot) {
 
     int start = this.offset;
     while (this.offset < this.limit) {
-      if (filter.accept(this.buffer[this.offset])) {
+      char c = this.buffer[this.offset];
+      if (filter.accept(c)) {
         return new String(this.buffer, start, this.offset - start);
       }
+      handleChar(c);
       this.offset++;
     }
     if (acceptEot) {
@@ -275,7 +326,7 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
       }
     }
     if (skip) {
-      this.offset = myCharsIndex;
+      setOffset(myCharsIndex);
     }
     return true;
   }
@@ -302,7 +353,7 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
       newPos++;
     }
     if (!lookahead) {
-      this.offset = newPos;
+      setOffset(newPos);
     }
     return true;
   }

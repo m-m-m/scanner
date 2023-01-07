@@ -3,11 +3,13 @@
 package io.github.mmm.scanner;
 
 import io.github.mmm.base.filter.CharFilter;
+import io.github.mmm.base.text.TextFormatMessageType;
+import io.github.mmm.base.text.TextFormatProcessor;
 
 /**
  * This is the interface for a scanner that can be used to parse a stream or sequence of characters.
  */
-public interface CharStreamScanner {
+public interface CharStreamScanner extends TextFormatProcessor {
 
   /**
    * The NULL character {@code '\0'} used to indicate the end of stream (EOS).<br>
@@ -37,14 +39,70 @@ public interface CharStreamScanner {
   char next();
 
   /**
-   * This method reads the current character without incrementing the index.
+   * This method reads the current character without {@link #next() consuming} characters and will therefore not change
+   * the state of this scanner.
    *
    * @return the current character or {@link #EOS} if none is {@link #hasNext() available}.
    */
   char peek();
 
   /**
-   * @return the position in the sequence to scan or in other words the number of bytes that have been read. Will
+   * Like {@link #peek()} but with further lookahead.<br>
+   * <b>Attention:</b><br>
+   * This method requires lookahead. For implementations that are backed by an underlying stream (or reader) the given
+   * {@code lookaheadOffset} shall not exceed the available lookahead size (buffer capacity given at construction time).
+   * Otherwise the method may fail.
+   *
+   * @param lookaheadOffset the lookahead offset. If {@code 0} this method will behave like {@link #peek()}. In case of
+   *        {@code 1} it will return the character after the next one and so forth.
+   * @return the {@link #peek() peeked} character at the given {@code lookaheadOffset} or {@link #EOS} if no such
+   *         character exists.
+   */
+  char peek(int lookaheadOffset);
+
+  /**
+   * This method peeks the number of {@link #peek() next characters} given by {@code count} and returns them as
+   * {@link String}. If there are less characters {@link #hasNext() available} the returned {@link String} will be
+   * shorter than {@code count} and only contain the available characters. Unlike {@link #read(int)} this method does
+   * not {@link #next() consume} the characters and will therefore not change the state of this scanner.<br>
+   * <b>Attention:</b><br>
+   * This method requires lookahead. For implementations that are backed by an underlying stream (or reader) the given
+   * {@code count} shall not exceed the available lookahead size (buffer capacity given at construction time). Otherwise
+   * the method may fail.
+   *
+   * @param count is the number of characters to peek. You may use {@link Integer#MAX_VALUE} to peek until the end of
+   *        text (EOT) if the data-size is suitable.
+   * @return a string with the given number of characters or all available characters if less than {@code count}. Will
+   *         be the empty string if no character is {@link #hasNext() available} at all.
+   */
+  String peekString(int count);
+
+  /**
+   * This method reads the number of {@link #next() next characters} given by {@code count} and returns them as string.
+   * If there are less characters {@link #hasNext() available} the returned string will be shorter than {@code count}
+   * and only contain the available characters.
+   *
+   * @param count is the number of characters to read. You may use {@link Integer#MAX_VALUE} to read until the end of
+   *        data if the data-size is suitable.
+   * @return a string with the given number of characters or all available characters if less than {@code count}. Will
+   *         be the empty string if no character is {@link #hasNext() available} at all.
+   */
+  String read(int count);
+
+  /**
+   * This method reads the number of {@link #next() next characters} given by {@code count} and
+   * {@link StringBuilder#append(char) appends} them to the given {@link StringBuilder}. If there are less characters
+   * {@link #hasNext() available} then only the remaining characters will be appended resulting in less characters than
+   * {@code count}.
+   *
+   * @param count is the number of characters to read. You may use {@link Integer#MAX_VALUE} to read until the end of
+   *        data if the data-size is suitable.
+   * @param builder the {@link StringBuilder} where to {@link StringBuilder#append(char) append} the characters to read.
+   */
+  void read(int count, StringBuilder builder);
+
+  /**
+   * @return the position in the sequence to scan or in other words the number of characters that have been read. Will
    *         initially be {@code 0}. Please note that this API is designed for scanning textual content (for parsers).
    *         Therefore we consider 2.1 terabyte as a suitable {@link Integer#MAX_VALUE limit}.
    */
@@ -81,7 +139,7 @@ public interface CharStreamScanner {
    * as needed.
    *
    * @param maxDigits is the maximum number of digits that will be read. The value has to be positive (greater than
-   *        zero). Use {@code 19} or higher to be able to read any long number.
+   *        zero). Should not be greater than {@code 19} as this will exceed the range of {@code long}.
    * @return the parsed number.
    * @throws NumberFormatException if the current current position does NOT point to a number.
    */
@@ -91,64 +149,64 @@ public interface CharStreamScanner {
    * This method reads the double value (decimal number) starting at the current position by reading as many matching
    * characters as available and returns its {@link Double#parseDouble(String) parsed} value. <br>
    *
-   * @return the parsed number.
-   * @throws NumberFormatException if the current current position does NOT point to a number.
+   * @return the parsed {@code double} number or {@code null} if the current current position does not point to a
+   *         number.
    */
-  default double readDouble() throws NumberFormatException {
+  default Double readDouble() {
 
-    String number = consumeDecimal();
-    return Double.parseDouble(number);
+    String number = readDecimal();
+    if (number == null) {
+      return null;
+    }
+    return Double.valueOf(number);
   }
 
   /**
-   * This method reads the float value (decimal number) starting at the current position by reading as many matching
-   * characters as available and returns its {@link Float#parseFloat(String) parsed} value. <br>
+   * This method reads a {@link Float} value from the current position {@link #next() consuming} as many matching
+   * characters as available.
    *
-   * @return the parsed number.
+   * @return the parsed {@link Float} value or {@code null} if the current current position does not point to a
+   *         {@link Float} number.
    * @throws NumberFormatException if the current current position does NOT point to a number.
    */
-  default float readFloat() throws NumberFormatException {
+  default Float readFloat() throws NumberFormatException {
 
-    String number = consumeDecimal();
-    return Float.parseFloat(number);
+    String number = readDecimal();
+    if (number == null) {
+      return null;
+    }
+    return Float.valueOf(number);
   }
 
   /**
-   * Consumes the characters of a decimal number (double or float).
+   * Consumes the characters of a decimal number (double, float, BigDecimal, etc.).
    *
-   * @return the decimal number as {@link String}.
+   * @return the decimal number as {@link String} or {@code null} if no decimal value was found.
    */
-  String consumeDecimal();
-
-  /**
-   * This method reads the number of {@link #next() next characters} given by {@code count} and returns them as string.
-   * If there are less characters {@link #hasNext() available} the returned string will be shorter than {@code count}
-   * and only contain the available characters.
-   *
-   * @param count is the number of characters to read. You may use {@link Integer#MAX_VALUE} to read until the end of
-   *        data if the data-size is suitable.
-   * @return a string with the given number of characters or all available characters if less than {@code count}. Will
-   *         be the empty string if no character is {@link #hasNext() available} at all.
-   */
-  String read(int count);
+  String readDecimal();
 
   /**
    * This method skips all {@link #next() next characters} as long as they equal to the according character of the
-   * {@code expected} string. <br>
+   * {@code expected} {@link String}. <br>
    * If a character differs this method stops and the parser points to the first character that differs from
-   * {@code expected}. Except for the latter circumstance, this method behaves like the following code:
+   * {@code expected}. Except for the latter circumstance, this method behaves similar to the following code:
    *
    * <pre>
    * {@link #read(int) read}(expected.length).equals(expected)
    * </pre>
    *
    * <b>ATTENTION:</b><br>
-   * Be aware that if already the first character differs, this method will NOT change the state of the scanner. So take
-   * care NOT to produce infinity loops.
+   * In most cases you want to prefer {@link #expectStrict(String)} instead of using this method. Only in specific cases
+   * and for highly optimized performance it may make sense to use it. In such case be careful and consider to combine
+   * with {@link #getPosition()} to be able to determine whether characters have been consumed if {@code false} was
+   * returned (e.g. otherwise when doing {@link #expectUnsafe(String) expectUnsafe}("false") and else doing
+   * {@link #expectUnsafe(String) expectUnsafe}("true") to parse a {@code boolean} literal your code could accept
+   * "falstrue" as "true").
    *
    * @param expected is the expected string.
    * @return {@code true} if the {@code expected} string was successfully consumed from this scanner, {@code false}
    *         otherwise.
+   * @see #expectStrict(String)
    */
   default boolean expectUnsafe(String expected) {
 
@@ -159,26 +217,28 @@ public interface CharStreamScanner {
    * This method skips all {@link #next() next characters} as long as they equal to the according character of the
    * {@code expected} string. <br>
    * If a character differs this method stops and the parser points to the first character that differs from
-   * {@code expected}. Except for the latter circumstance, this method behaves like the following code:
+   * {@code expected}. Except for the latter circumstance, this method behaves similar to the following code:
    *
    * <pre>
    * {@link #read(int) read}(expected.length).equals[IgnoreCase](expected)
    * </pre>
    *
    * <b>ATTENTION:</b><br>
-   * Be aware that if already the first character differs, this method will NOT change the state of the scanner. So take
-   * care NOT to produce infinity loops.
+   * In most cases you want to prefer {@link #expectStrict(String, boolean)} instead of using this method. See
+   * {@link #expectUnsafe(String)} for details.
    *
    * @param expected is the expected string.
    * @param ignoreCase - if {@code true} the case of the characters is ignored when compared.
    * @return {@code true} if the {@code expected} string was successfully consumed from this scanner, {@code false}
    *         otherwise.
+   * @see #expectStrict(String, boolean)
    */
   boolean expectUnsafe(String expected, boolean ignoreCase);
 
   /**
-   * This method acts as {@link #expectUnsafe(String, boolean)} but if the expected String is NOT completely present, no
-   * character is {@link #next() consumed} and the state of the scanner remains unchanged.<br>
+   * This method determines if the given {@code expected} {@link String} is completely present at the current position.
+   * It will only {@link #next() consume} characters and change the state if the {@code expected} {@link String} was
+   * found (entirely).<br>
    * <b>Attention:</b><br>
    * This method requires lookahead. For implementations that are backed by an underlying stream (or reader) the
    * {@link String#length() length} of the expected {@link String} shall not exceed the available lookahead size (buffer
@@ -187,6 +247,7 @@ public interface CharStreamScanner {
    * @param expected is the expected string.
    * @return {@code true} if the {@code expected} string was successfully consumed from this scanner, {@code false}
    *         otherwise.
+   * @see #expectUnsafe(String)
    */
   default boolean expectStrict(String expected) {
 
@@ -194,17 +255,19 @@ public interface CharStreamScanner {
   }
 
   /**
-   * This method acts as {@link #expectUnsafe(String, boolean)} but if the expected String is NOT completely present, no
-   * character is {@link #next() consumed} and the state of the scanner remains unchanged.<br>
+   * This method determines if the given {@code expected} {@link String} is completely present at the current position.
+   * It will only {@link #next() consume} characters and change the state if the {@code expected} {@link String} was
+   * found (entirely).<br>
    * <b>Attention:</b><br>
    * This method requires lookahead. For implementations that are backed by an underlying stream (or reader) the
    * {@link String#length() length} of the expected {@link String} shall not exceed the available lookahead size (buffer
    * capacity given at construction time). Otherwise the method may fail.
    *
-   * @param expected is the expected string.
-   * @param ignoreCase - if {@code true} the case of the characters is ignored when compared.
-   * @return {@code true} if the {@code expected} string was successfully consumed from this scanner, {@code false}
-   *         otherwise.
+   * @param expected the expected {@link String} to search for.
+   * @param ignoreCase - if {@code true} the case of the characters is ignored when compared, {@code false} otherwise.
+   * @return {@code true} if the {@code expected} string was successfully found and {@link #next() consume} from this
+   *         scanner, {@code false} otherwise.
+   * @see #expectUnsafe(String, boolean)
    */
   default boolean expectStrict(String expected, boolean ignoreCase) {
 
@@ -212,19 +275,19 @@ public interface CharStreamScanner {
   }
 
   /**
-   * This method acts as {@link #expectUnsafe(String, boolean)} but if the expected String is NOT completely present, no
-   * character is {@link #next() consumed} and the state of the scanner remains unchanged.<br>
+   * This method determines if the given {@code expected} {@link String} is completely present at the current position.
+   * It will only {@link #next() consume} characters and change the state if {@code lookahead} is {@code false} and the
+   * {@code expected} {@link String} was found (entirely).<br>
    * <b>Attention:</b><br>
    * This method requires lookahead. For implementations that are backed by an underlying stream (or reader) the
    * {@link String#length() length} of the expected {@link String} shall not exceed the available lookahead size (buffer
    * capacity given at construction time). Otherwise the method may fail.
    *
-   * @param expected is the expected string.
-   * @param ignoreCase - if {@code true} the case of the characters is ignored when compared.
+   * @param expected the expected {@link String} to search for.
+   * @param ignoreCase - if {@code true} the case of the characters is ignored when compared, {@code false} otherwise.
    * @param lookahead - if {@code true} the state of the scanner remains unchanged even if the expected {@link String}
-   *        has been found, {@code false} otherwise.
-   * @return {@code true} if the {@code expected} string was successfully consumed from this scanner, {@code false}
-   *         otherwise.
+   *        has been found, {@code false} otherwise (expected {@link String} is consumed on match).
+   * @return {@code true} if the {@code expected} string was successfully found, {@code false} otherwise.
    */
   boolean expectStrict(String expected, boolean ignoreCase, boolean lookahead);
 
@@ -265,8 +328,9 @@ public interface CharStreamScanner {
    * indicating the problem.
    *
    * @param expected is the expected character.
+   * @throws IllegalStateException if the required character was not found.
    */
-  default void requireOne(char expected) {
+  default void requireOne(char expected) throws IllegalStateException {
 
     if (!hasNext()) {
       throw new IllegalStateException("Expecting '" + expected + "' but found end-of-stream.");
@@ -763,7 +827,7 @@ public interface CharStreamScanner {
    */
   default String readJavaStringLiteral() {
 
-    return readJavaStringLiteral(false);
+    return readJavaStringLiteral(TextFormatMessageType.ERROR);
   }
 
   /**
@@ -771,11 +835,11 @@ public interface CharStreamScanner {
    * As a complex example for the input "Hi \"\176\477\579\u2022\uuuuu2211\"\n" this scanner would return the
    * {@link String} output {@code Hi "~'7/9•∑"} followed by a newline character.
    *
+   * @param severity the {@link TextFormatMessageType} to use to report invalid escape sequences or missing terminating
+   *        quotation.
    * @return the parsed Java {@link String} literal value or {@code null} if not pointing to a {@link String} literal.
-   * @param tolerant - {@code true} if invalid escape sequences should be tolerated (as '?'), {@code false} to throw an
-   *        exception in such case.
    */
-  String readJavaStringLiteral(boolean tolerant);
+  String readJavaStringLiteral(TextFormatMessageType severity);
 
   /**
    * Reads and parses a Java {@link Character} literal value according to JLS 3.10.6. <br>
@@ -812,7 +876,7 @@ public interface CharStreamScanner {
    */
   default Character readJavaCharLiteral() {
 
-    return readJavaCharLiteral(false);
+    return readJavaCharLiteral(TextFormatMessageType.ERROR);
   }
 
   /**
@@ -846,11 +910,12 @@ public interface CharStreamScanner {
    * </tr>
    * </table>
    *
-   * @return the parsed Java {@link String} literal value or {@code null} if not pointing to a {@link String} literal.
-   * @param tolerant - {@code true} if an invalid char literal should be tolerated (as '?'), {@code false} to throw an
-   *        exception in such case.
+   * @param severity the {@link TextFormatMessageType} to use to report invalid escape sequences or missing terminating
+   *        quotation.
+   * @return the parsed Java {@link Character} literal value or {@code null} if not pointing to a {@link Character}
+   *         literal.
    */
-  Character readJavaCharLiteral(boolean tolerant);
+  Character readJavaCharLiteral(TextFormatMessageType severity);
 
   /**
    * @return the {@link String} with the characters that have already been parsed but are still available in the

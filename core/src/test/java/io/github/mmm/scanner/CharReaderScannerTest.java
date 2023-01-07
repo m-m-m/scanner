@@ -9,14 +9,14 @@ import java.io.StringReader;
  */
 public class CharReaderScannerTest extends AbstractCharStreamScannerTest {
 
-  private static final CharReaderScanner SCANNER = new CharReaderScanner(1);
+  private static final CharReaderScanner SCANNER = new CharReaderScanner(1, HANDLER);
 
   @Override
-  protected CharStreamScanner scanner(String string, boolean lookahead) {
+  protected CharStreamScanner scanner(String string, int capacity) {
 
     StringReader reader = new StringReader(string);
-    if (lookahead) {
-      return new CharReaderScanner(1024, reader);
+    if (capacity != 1) {
+      return new CharReaderScanner(capacity, HANDLER, reader);
     }
     SCANNER.setReader(reader);
     return SCANNER;

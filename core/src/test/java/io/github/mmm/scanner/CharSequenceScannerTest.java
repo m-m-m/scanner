@@ -11,9 +11,9 @@ import org.junit.jupiter.api.Test;
 public class CharSequenceScannerTest extends AbstractCharStreamScannerTest {
 
   @Override
-  protected CharStreamScanner scanner(String string, boolean lookahead) {
+  protected CharStreamScanner scanner(String string, int capacity) {
 
-    return new CharSequenceScanner(string);
+    return new CharSequenceScanner(string, HANDLER);
   }
 
   /**

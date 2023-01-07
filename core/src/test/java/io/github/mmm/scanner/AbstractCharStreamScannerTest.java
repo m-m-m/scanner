@@ -15,12 +15,24 @@ import io.github.mmm.base.filter.CharFilter;
 @SuppressWarnings("all")
 public abstract class AbstractCharStreamScannerTest extends Assertions {
 
+  protected static final SimpleTextFormatMessageHandler HANDLER = SimpleTextFormatMessageHandler
+      .ofThrowErrorsNoLogging();
+
   protected CharStreamScanner scanner(String string) {
 
     return scanner(string, false);
   }
 
-  protected abstract CharStreamScanner scanner(String string, boolean lookahead);
+  protected CharStreamScanner scanner(String string, boolean lookahead) {
+
+    int capacity = 1;
+    if (lookahead) {
+      capacity = 32;
+    }
+    return scanner(string, capacity);
+  }
+
+  protected abstract CharStreamScanner scanner(String string, int capacity);
 
   @Test
   public void testSkipWhile() {
@@ -249,11 +261,19 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     CharStreamScanner scanner = scanner(string);
     // then
     assertThat(scanner.next()).isEqualTo('\"');
+    assertThat(scanner.getPosition()).isEqualTo(1);
+    assertThat(scanner.getColumn()).isEqualTo(2);
+    assertThat(scanner.getLine()).isEqualTo(1);
     String result = scanner.readUntil('\"', false, syntax);
     assertThat(result).isEqualTo("Quotet text with \" inside!");
+    assertThat(scanner.getPosition()).isEqualTo(29);
+    assertThat(scanner.getColumn()).isEqualTo(30);
+    assertThat(scanner.getLine()).isEqualTo(1);
     assertThat(scanner.expectUnsafe(end, false)).isTrue();
     assertThat(scanner.hasNext()).isFalse();
     assertThat(scanner.getPosition()).isEqualTo(34);
+    assertThat(scanner.getColumn()).isEqualTo(35);
+    assertThat(scanner.getLine()).isEqualTo(1);
   }
 
   /**
@@ -372,17 +392,14 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     // given
     String string = "123456789-987654321+0.123e-10xyz";
     // when
-    CharStreamScanner scanner = scanner(string);
+    CharStreamScanner scanner = scanner(string, 4);
     // then
     assertThat(scanner.readDouble()).isEqualTo(123456789d);
     assertThat(scanner.readDouble()).isEqualTo(-987654321d);
     assertThat(scanner.readDouble()).isEqualTo(+0.123e-10);
-    try {
-      scanner.readDouble();
-      failBecauseExceptionWasNotThrown(NumberFormatException.class);
-    } catch (NumberFormatException e) {
-
-    }
+    assertThat(scanner.readDouble()).isNull();
+    // scanner.require("xyz");
+    assertThat(scanner.read(Integer.MAX_VALUE)).isEqualTo("xyz");
   }
 
   @Test
@@ -391,17 +408,14 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     // given
     String string = "123456789-987654321+0.123e-10xyz";
     // when
-    CharStreamScanner scanner = scanner(string);
+    CharStreamScanner scanner = scanner(string, 4);
     // then
     assertThat(scanner.readFloat()).isEqualTo(123456789f);
     assertThat(scanner.readFloat()).isEqualTo(-987654321f);
     assertThat(scanner.readFloat()).isEqualTo(+0.123e-10f);
-    try {
-      scanner.readDouble();
-      failBecauseExceptionWasNotThrown(NumberFormatException.class);
-    } catch (NumberFormatException e) {
-
-    }
+    assertThat(scanner.readFloat()).isNull();
+    // scanner.require("xyz");
+    assertThat(scanner.read(Integer.MAX_VALUE)).isEqualTo("xyz");
   }
 
   /**
@@ -441,6 +455,9 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     // then
     assertThat(result).isEqualTo("Hi \"quote\", a'l\\t and \"esc'<><x>");
     assertThat(scanner.hasNext()).isFalse();
+    assertThat(scanner.getPosition()).isEqualTo(54);
+    assertThat(scanner.getColumn()).isEqualTo(55);
+    assertThat(scanner.getLine()).isEqualTo(1);
 
     // and when (with acceptEof)
     scanner = scanner("Hi 'qu''ote'");
@@ -448,6 +465,9 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     // then
     assertThat(result).isEqualTo("Hi qu'ote");
     assertThat(scanner.hasNext()).isFalse();
+    assertThat(scanner.getPosition()).isEqualTo(12);
+    assertThat(scanner.getColumn()).isEqualTo(13);
+    assertThat(scanner.getLine()).isEqualTo(1);
   }
 
   private CharStreamScanner check(char stop, boolean acceptEot, CharScannerSyntax syntax, String input,
@@ -456,6 +476,12 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     CharStreamScanner scanner = scanner(input);
     String output = scanner.readUntil(stop, acceptEot, syntax);
     assertThat(output).isEqualTo(expected);
+    if (!scanner.hasNext()) {
+      int length = input.length();
+      assertThat(scanner.getPosition()).isEqualTo(length);
+      assertThat(scanner.getColumn()).isEqualTo(length + 1);
+      assertThat(scanner.getLine()).isEqualTo(1);
+    }
     return scanner;
   }
 
@@ -473,6 +499,9 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     assertThat(scanner.expectUnsafe(middle.toUpperCase(Locale.ENGLISH), true)).isTrue();
     assertThat(scanner.expectUnsafe(end.toLowerCase(Locale.ENGLISH), true)).isTrue();
     assertThat(scanner.hasNext()).isFalse();
+    assertThat(scanner.getPosition()).isEqualTo(25);
+    assertThat(scanner.getColumn()).isEqualTo(26);
+    assertThat(scanner.getLine()).isEqualTo(1);
   }
 
   @Test
@@ -484,8 +513,17 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     CharStreamScanner scanner = scanner(string, true);
     // then
     assertThat(scanner.expectStrict("Hello WorlD", false)).isFalse();
+    assertThat(scanner.getPosition()).isEqualTo(0);
+    assertThat(scanner.getColumn()).isEqualTo(1);
+    assertThat(scanner.getLine()).isEqualTo(1);
     assertThat(scanner.expectStrict("Hello ", false)).isTrue();
+    assertThat(scanner.getPosition()).isEqualTo(6);
+    assertThat(scanner.getColumn()).isEqualTo(7);
+    assertThat(scanner.getLine()).isEqualTo(1);
     assertThat(scanner.expectStrict("WorlD!", true)).isTrue();
+    assertThat(scanner.getPosition()).isEqualTo(12);
+    assertThat(scanner.getColumn()).isEqualTo(13);
+    assertThat(scanner.getLine()).isEqualTo(1);
     assertThat(scanner.hasNext()).isFalse();
   }
 
@@ -500,6 +538,9 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     assertThat(scanner.expectUnsafe("strign", false)).isFalse();
     assertThat(scanner.read(2)).isEqualTo("ng");
     assertThat(scanner.hasNext()).isFalse();
+    assertThat(scanner.getPosition()).isEqualTo(6);
+    assertThat(scanner.getColumn()).isEqualTo(7);
+    assertThat(scanner.getLine()).isEqualTo(1);
   }
 
   @Test
@@ -518,6 +559,9 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     }
     assertThat(scanner.hasNext()).isFalse();
     assertThat(scanner.next()).isEqualTo('\0');
+    assertThat(scanner.getPosition()).isEqualTo(10);
+    assertThat(scanner.getColumn()).isEqualTo(11);
+    assertThat(scanner.getLine()).isEqualTo(1);
   }
 
   @Test
@@ -539,6 +583,9 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     assertThat(scanner.readWhile(textFilter, 2)).isEqualTo("gh");
     assertThat(scanner.readWhile(textFilter, 2)).isEqualTo("i");
     assertThat(scanner.hasNext()).isFalse();
+    assertThat(scanner.getPosition()).isEqualTo(12);
+    assertThat(scanner.getColumn()).isEqualTo(13);
+    assertThat(scanner.getLine()).isEqualTo(1);
   }
 
   @Test
@@ -555,6 +602,35 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     assertThat(scanner.readLine()).isEqualTo("jkl");
     assertThat(scanner.readLine()).isEmpty();
     assertThat(scanner.readLine()).isEqualTo("end");
+    // given
+    string = "abc\ndef\nghi\r\njkl\n\nend";
+    // when
+    scanner = scanner(string);
+    // then
+    assertThat(scanner.readLine()).isEqualTo("abc");
+    assertThat(scanner.getPosition()).isEqualTo(4);
+    assertThat(scanner.getColumn()).isEqualTo(1);
+    assertThat(scanner.getLine()).isEqualTo(2);
+    assertThat(scanner.readLine()).isEqualTo("def");
+    assertThat(scanner.getPosition()).isEqualTo(8);
+    assertThat(scanner.getColumn()).isEqualTo(1);
+    assertThat(scanner.getLine()).isEqualTo(3);
+    assertThat(scanner.readLine()).isEqualTo("ghi");
+    assertThat(scanner.getPosition()).isEqualTo(13);
+    assertThat(scanner.getColumn()).isEqualTo(1);
+    assertThat(scanner.getLine()).isEqualTo(4);
+    assertThat(scanner.readLine()).isEqualTo("jkl");
+    assertThat(scanner.getPosition()).isEqualTo(17);
+    assertThat(scanner.getColumn()).isEqualTo(1);
+    assertThat(scanner.getLine()).isEqualTo(5);
+    assertThat(scanner.readLine()).isEmpty();
+    assertThat(scanner.getPosition()).isEqualTo(18);
+    assertThat(scanner.getColumn()).isEqualTo(1);
+    assertThat(scanner.getLine()).isEqualTo(6);
+    assertThat(scanner.readLine()).isEqualTo("end");
+    assertThat(scanner.getPosition()).isEqualTo(21);
+    assertThat(scanner.getColumn()).isEqualTo(4);
+    assertThat(scanner.getLine()).isEqualTo(6);
   }
 
   @Test
@@ -590,6 +666,10 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     assertThat(scanner.readDigit()).isEqualTo(-1);
     assertThat(scanner.next()).isEqualTo('a');
     assertThat(scanner.readDigit()).isEqualTo(-1);
+    assertThat(scanner.next()).isEqualTo(' ');
+    assertThat(scanner.getPosition()).isEqualTo(13);
+    assertThat(scanner.getColumn()).isEqualTo(14);
+    assertThat(scanner.getLine()).isEqualTo(1);
   }
 
   @Test
@@ -637,6 +717,9 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     assertThat(scanner.expectUnsafe("foo", false)).isTrue();
     assertThat(scanner.next()).isEqualTo(';');
     assertThat(scanner.hasNext()).isFalse();
+    assertThat(scanner.getPosition()).isEqualTo(31);
+    assertThat(scanner.getColumn()).isEqualTo(32);
+    assertThat(scanner.getLine()).isEqualTo(1);
   }
 
   @Test
@@ -671,6 +754,9 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     assertThat(scanner.skipWhileAndPeek(filter, 10)).isEqualTo('\0');
     assertThat(scanner.expectOne(' ')).isFalse();
     assertThat(scanner.expectUnsafe("Text", true)).isFalse();
+    assertThat(scanner.getPosition()).isEqualTo(0);
+    assertThat(scanner.getColumn()).isEqualTo(1);
+    assertThat(scanner.getLine()).isEqualTo(1);
   }
 
   /**
@@ -685,9 +771,11 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     CharStreamScanner scanner = scanner(string);
     String result = scanner.readJavaStringLiteral();
     // then
-    assertThat(result).isEqualTo("Hi \"~'7/9•∑\"\n");
-    assertThat(result).isEqualTo("Hi \"\176\477\579\u2022\uuuuu2211\"\n");
+    assertThat(result).isEqualTo("Hi \"\176\477\579\u2022\uuuuu2211\"\n").isEqualTo("Hi \"~'7/9•∑\"\n");
     assertThat(scanner.hasNext()).isFalse();
+    assertThat(scanner.getPosition()).isEqualTo(39);
+    assertThat(scanner.getColumn()).isEqualTo(40);
+    assertThat(scanner.getLine()).isEqualTo(1);
   }
 
   /**
@@ -696,24 +784,39 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testReadJavaStringLiteralErrors() {
 
-    readJavaStringLiteralInvalid("\"", "\"", "");
-    readJavaStringLiteralInvalid("\"a", "\"a", "a");
-    readJavaStringLiteralInvalid("\"ab", "\"ab", "ab");
-    readJavaStringLiteralInvalid("\"ab\\\"", "\"ab\"", "ab\"");
+    readJavaStringLiteralInvalid("\"", null, "");
+    readJavaStringLiteralInvalid("\"a", null, "a");
+    readJavaStringLiteralInvalid("\"ab", null, "ab");
+    readJavaStringLiteralInvalid("\"ab\\\"", null, "ab\"");
     readJavaStringLiteralInvalid("\"ab\\\"\\8", "\\8", "ab\"8");
     readJavaStringLiteralInvalid("\"\\u1\"$", "\\u1", "?");
     readJavaStringLiteralInvalid("\"a\\u123x\"", "\\u123", "a?x");
   }
 
-  private void readJavaStringLiteralInvalid(String string, String expectedErrorValue, String tolerantResult) {
+  private void readJavaStringLiteralInvalid(String string, String illegalEscape, String tolerantResult) {
 
-    assertThat(scanner(string).readJavaStringLiteral(true)).isEqualTo(tolerantResult);
+    CharStreamScanner scanner = scanner(string);
+    assertThat(scanner.readJavaStringLiteral(null)).isEqualTo(tolerantResult);
+    int length = string.length();
+    // ensure that we read to the end...
+    while (scanner.hasNext()) {
+      scanner.next();
+    }
+    assertThat(scanner.getPosition()).isEqualTo(length);
+    assertThat(scanner.getColumn()).isEqualTo(length + 1);
+    assertThat(scanner.getLine()).isEqualTo(1);
     Class<IllegalStateException> exception = IllegalStateException.class;
     try {
       scanner(string).readJavaStringLiteral();
       failBecauseExceptionWasNotThrown(exception);
     } catch (Exception e) {
-      assertThat(e).isInstanceOf(exception).hasMessageContaining(expectedErrorValue);
+      String message;
+      if (illegalEscape != null) {
+        message = "Illegal escape sequence " + illegalEscape;
+      } else {
+        message = "Java string literal not terminated";
+      }
+      assertThat(e).isInstanceOf(exception).hasMessage(message);
     }
   }
 
@@ -743,6 +846,9 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     assertThat(scanner.readJavaCharLiteral()).isEqualTo('•');
     assertThat(scanner.expectOne('$')).isTrue();
     assertThat(scanner.hasNext()).isFalse();
+    assertThat(scanner.getPosition()).isEqualTo(41);
+    assertThat(scanner.getColumn()).isEqualTo(42);
+    assertThat(scanner.getLine()).isEqualTo(1);
 
     // and given
     string = "'a''\\'''\\\\''\\0''\\47''\\176''\\u2022'";
@@ -757,6 +863,9 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     assertThat(scanner.readJavaCharLiteral()).isEqualTo('~');
     assertThat(scanner.readJavaCharLiteral()).isEqualTo('•');
     assertThat(scanner.hasNext()).isFalse();
+    assertThat(scanner.getPosition()).isEqualTo(34);
+    assertThat(scanner.getColumn()).isEqualTo(35);
+    assertThat(scanner.getLine()).isEqualTo(1);
   }
 
   /**
@@ -777,7 +886,16 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
 
   private void readJavaCharLiteralInvalid(String string, String expectedErrorValue) {
 
-    assertThat(scanner(string).readJavaCharLiteral(true)).isEqualTo('?');
+    CharStreamScanner scanner = scanner(string);
+    assertThat(scanner.readJavaCharLiteral(null)).isEqualTo('?');
+    int length = string.length();
+    // ensure that we read to the end...
+    while (scanner.hasNext()) {
+      scanner.next();
+    }
+    assertThat(scanner.getPosition()).isEqualTo(length);
+    assertThat(scanner.getColumn()).isEqualTo(length + 1);
+    assertThat(scanner.getLine()).isEqualTo(1);
     Class<IllegalStateException> exception = IllegalStateException.class;
     try {
       scanner(string).readJavaCharLiteral();

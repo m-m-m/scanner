@@ -2,11 +2,18 @@
  * http://www.apache.org/licenses/LICENSE-2.0 */
 package io.github.mmm.scanner;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.github.mmm.base.filter.CharFilter;
 import io.github.mmm.base.text.CaseHelper;
+import io.github.mmm.base.text.TextFormatMessage;
+import io.github.mmm.base.text.TextFormatMessageHandler;
+import io.github.mmm.base.text.TextFormatMessageType;
 
 /**
  * Abstract implementation of {@link CharStreamScanner}.<br>
@@ -15,9 +22,13 @@ import io.github.mmm.base.text.CaseHelper;
  */
 public abstract class AbstractCharStreamScanner implements CharStreamScanner {
 
-  private static final Logger LOG = LoggerFactory.getLogger(AbstractCharStreamScanner.class);
+  static final Logger LOG = LoggerFactory.getLogger(AbstractCharStreamScanner.class);
 
   private static final CharFilter FILTER_SINGLE_QUOTE = (c) -> (c == '\'');
+
+  private final TextFormatMessageHandler messageHandler;
+
+  private final boolean collectMessages;
 
   /** The internal buffer with character data. */
   protected char[] buffer;
@@ -31,6 +42,15 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
    */
   protected int limit;
 
+  /** @see #getLine() */
+  protected int line;
+
+  /** @see #getColumn() */
+  protected int column;
+
+  /** @see #getMessages() */
+  private List<TextFormatMessage> messages;
+
   /** A {@link StringBuilder} instance that can be shared and reused. May initially be <code>null</code>. */
   private StringBuilder sb;
 
@@ -38,23 +58,71 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
    * The constructor.
    *
    * @param capacity the capacity of the internal buffer in {@code char}s.
+   * @param messageHandler the {@link TextFormatMessageHandler}.
    */
-  public AbstractCharStreamScanner(int capacity) {
+  public AbstractCharStreamScanner(int capacity, TextFormatMessageHandler messageHandler) {
 
-    this(new char[capacity]);
+    this(new char[capacity], messageHandler);
   }
 
   /**
    * The constructor.
    *
    * @param buffer the internal {@code char[]} buffer.
+   * @param messageHandler the {@link TextFormatMessageHandler}.
    */
-  public AbstractCharStreamScanner(char[] buffer) {
+  public AbstractCharStreamScanner(char[] buffer, TextFormatMessageHandler messageHandler) {
 
     super();
+    if (messageHandler == null) {
+      this.messageHandler = SimpleTextFormatMessageHandler.get();
+    } else {
+      this.messageHandler = messageHandler;
+    }
+    if (this.messageHandler instanceof SimpleTextFormatMessageHandler) {
+      this.collectMessages = ((SimpleTextFormatMessageHandler) this.messageHandler).isCollectMessages();
+    } else {
+      this.collectMessages = true;
+    }
     this.buffer = buffer;
     this.offset = 0;
     this.limit = 0;
+    this.line = 1;
+    this.column = 1;
+  }
+
+  @Override
+  public int getLine() {
+
+    return this.line;
+  }
+
+  @Override
+  public int getColumn() {
+
+    return this.column;
+  }
+
+  @Override
+  public void addMessage(TextFormatMessage message) {
+
+    message = this.messageHandler.handle(message);
+    if (this.collectMessages) {
+      getMessages().add(message);
+    }
+  }
+
+  @Override
+  public List<TextFormatMessage> getMessages() {
+
+    if (this.messages == null) {
+      if (this.collectMessages) {
+        this.messages = new ArrayList<>();
+      } else {
+        this.messages = Collections.emptyList();
+      }
+    }
+    return this.messages;
   }
 
   /**
@@ -64,6 +132,8 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
 
     this.offset = 0;
     this.limit = 0;
+    this.line = 1;
+    this.column = 1;
     if (this.sb != null) {
       this.sb.setLength(0);
     }
@@ -172,8 +242,9 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
   }
 
   /**
-   * Fills the internal {@link #buffer} with further data (if available from underlying source such as a stream/reader).
-   * If the {@link #isEos() end of the stream} has not been reached, all buffers should be filled now.
+   * Consumes all remaining data in the internal {@link #buffer} and fills the {@link #buffer} with further data (if
+   * available from underlying source such as a stream/reader). If the {@link #isEos() end of the stream} has not been
+   * reached, all buffers should be filled now.
    *
    * @return {@code true} if data was filled, {@code false} if {@link #isEos() EOS}.
    */
@@ -186,9 +257,38 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
   public char next() {
 
     if (hasNext()) {
-      return this.buffer[this.offset++];
+      return handleChar(this.buffer[this.offset++]);
     }
     return 0;
+  }
+
+  /**
+   * Updates {@link #getColumn() column} and {@link #getLine() line} if the given character is consumed.
+   *
+   * @param c the character to handle.
+   * @return the given character.
+   */
+  protected char handleChar(char c) {
+
+    if (c == '\n') {
+      this.line++;
+      this.column = 1;
+    } else {
+      this.column++;
+    }
+    return c;
+  }
+
+  /**
+   * @param newOffset the new {@link #offset} value to set. Should be greater or equal to the current {@link #offset}.
+   */
+  protected void setOffset(int newOffset) {
+
+    assert (newOffset >= this.offset);
+    assert (newOffset <= this.limit);
+    while (this.offset < newOffset) {
+      handleChar(this.buffer[this.offset++]);
+    }
   }
 
   @Override
@@ -221,13 +321,14 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
   public String readUntil(char stop, boolean acceptEot) {
 
     if (!hasNext()) {
-      eot(null, acceptEot);
+      return eot(null, acceptEot);
     }
     StringBuilder builder = null;
     while (true) {
       int start = this.offset;
       while (this.offset < this.limit) {
         char c = this.buffer[this.offset++];
+        handleChar(c);
         if (c == stop) {
           return getAppended(builder, start, this.offset - 1);
         }
@@ -242,15 +343,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
   @Override
   public String readUntil(final char stop, boolean acceptEot, CharScannerSyntax syntax) {
 
-    CharFilter filter = new CharFilter() {
-
-      @Override
-      public boolean accept(char c) {
-
-        return (c == stop);
-      }
-    };
-    return readUntil(filter, acceptEot, syntax);
+    return readUntil(c -> (c == stop), acceptEot, syntax);
   }
 
   @Override
@@ -264,6 +357,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
       // int end = this.limit;
       while (this.offset < this.limit) {
         char c = this.buffer[this.offset++];
+        handleChar(c);
         state.parse(c);
         if (state.done) {
           return state.builder.toString();
@@ -308,6 +402,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
       int start = this.offset;
       while (this.offset < this.limit) {
         char c = this.buffer[this.offset++];
+        handleChar(c);
         if (c == escape) {
           builder = append(builder, start, this.offset - 1);
           // lookahead
@@ -323,6 +418,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
             // escape character
             builder = builder(builder);
             builder.append(c);
+            handleChar(c);
             this.offset++;
             start = this.offset;
           }
@@ -347,9 +443,11 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     while (true) {
       int start = this.offset;
       while (this.offset < this.limit) {
-        if (filter.accept(this.buffer[this.offset])) {
+        char c = this.buffer[this.offset];
+        if (filter.accept(c)) {
           return getAppended(builder, start, this.offset - 1);
         }
+        handleChar(c);
         this.offset++;
       }
       builder = append(builder, start, this.limit);
@@ -367,7 +465,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     if (stopLength == 0) {
       return "";
     }
-    verifyLookahead(stop);
+    verifyLookahead(stopLength);
     if (!hasNext()) {
       return eot(null, acceptEot);
     }
@@ -418,9 +516,10 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
   }
 
   /**
-   * @param substring the substring to match without consuming what requires a lookahead.
+   * @param length the number of characters for lookahead (match without consuming). May fail if the {@code length}
+   *        exceeds the buffer size.
    */
-  protected void verifyLookahead(String substring) {
+  protected void verifyLookahead(int length) {
 
     // nothing by default
   }
@@ -477,6 +576,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
       return false;
     }
     if (this.buffer[this.offset] == expected) {
+      handleChar(expected);
       this.offset++;
       return true;
     }
@@ -514,6 +614,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
           return false;
         }
       }
+      handleChar(c);
       this.offset++;
     }
     return true;
@@ -534,18 +635,23 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
       appender.trimEnd = this.offset;
       while (this.offset < this.limit) {
         char c = this.buffer[this.offset];
+        handleChar(c);
         if (c == '\r') {
           int end = this.offset;
           this.offset++;
           if (this.offset < this.limit) {
-            if (this.buffer[this.offset] == '\n') {
+            c = this.buffer[this.offset];
+            if (c == '\n') {
+              handleChar(c);
               this.offset++;
             }
             return appender.getAppended(end);
           } else { // EOL insanity...
             appender.append(end);
             if (fill()) {
-              if (this.buffer[this.offset] == '\n') {
+              c = this.buffer[this.offset];
+              if (c == '\n') {
+                handleChar(c);
                 this.offset++;
               }
             }
@@ -568,26 +674,29 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
   }
 
   @Override
-  public String readJavaStringLiteral(boolean tolerant) {
+  public String readJavaStringLiteral(TextFormatMessageType severity) {
 
     if (!hasNext()) {
       return null;
     }
-    if (this.buffer[this.offset] != '"') {
+    char c = this.buffer[this.offset];
+    if (c != '"') {
       return null;
     }
+    handleChar(c);
     this.offset++;
     StringBuilder builder = null;
     while (hasNext()) {
       int start = this.offset;
       while (this.offset < this.limit) {
-        char c = this.buffer[this.offset++];
+        c = this.buffer[this.offset++];
+        handleChar(c);
         if (c == '"') {
           return getAppended(builder, start, this.offset - 1);
         } else if (c == '\\') {
           builder = append(builder, start, this.offset - 1);
           builder = builder(builder);
-          parseEscapeSequence(builder, tolerant);
+          parseEscapeSequence(builder, severity);
           start = this.offset;
         }
       }
@@ -597,15 +706,13 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     if (builder != null) {
       value = builder.toString();
     }
-    if (tolerant) {
-      LOG.debug("Tolerating unterminated string literal: {}", value);
-      return value;
-    }
-    throw new IllegalStateException("Java string literal not terminated: \"" + value);
+    String message = "Java string literal not terminated";
+    addMessage(severity, message);
+    return value;
   }
 
   @Override
-  public Character readJavaCharLiteral(boolean tolerant) {
+  public Character readJavaCharLiteral(TextFormatMessageType severity) {
 
     if (expectOne('\'')) {
       StringBuilder error = null;
@@ -614,7 +721,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
       if (c == '\\') {
         c = next();
         if (c == 'u') {
-          c = parseUnicodeEscapeSequence(tolerant);
+          c = parseUnicodeEscapeSequence(severity);
           if (expectOne('\'')) {
             return Character.valueOf(c);
           }
@@ -661,11 +768,9 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
           error.append('\'');
         }
       }
-      if (tolerant) {
-        LOG.debug("Tolerating invalid char literal: {}", error.toString());
-        return Character.valueOf('?');
-      }
-      throw new IllegalStateException("Invalid Java character literal: " + error.toString());
+      String message = "Invalid Java character literal: " + error.toString();
+      addMessage(severity, message);
+      return Character.valueOf('?');
     }
     return null;
 
@@ -689,11 +794,11 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     return error;
   }
 
-  private void parseEscapeSequence(StringBuilder builder, boolean tolerant) {
+  private void parseEscapeSequence(StringBuilder builder, TextFormatMessageType severity) {
 
     char c = next();
     if (c == 'u') { // unicode
-      char value = parseUnicodeEscapeSequence(tolerant);
+      char value = parseUnicodeEscapeSequence(severity);
       builder.append(value);
     } else if (CharFilter.OCTAL_DIGIT.accept(c)) { // octal C legacy stuff
       int value = c - '0';
@@ -713,18 +818,15 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     } else {
       Character resolved = CharEscapeHelper.resolveEscape(c);
       if (resolved == null) {
-        if (tolerant) {
-          builder.append(c);
-        } else {
-          throw new IllegalStateException("Illegal escape sequence: \\" + c);
-        }
+        addMessage(severity, "Illegal escape sequence \\" + c);
+        builder.append(c);
       } else {
         builder.append(resolved.charValue());
       }
     }
   }
 
-  private char parseUnicodeEscapeSequence(boolean tolerant) {
+  private char parseUnicodeEscapeSequence(TextFormatMessageType severity) {
 
     skipWhile('u');
     int i = 0;
@@ -742,12 +844,9 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
             hexString = "0" + hexString;
           }
         }
-        if (tolerant) {
-          LOG.debug("Tolerating invalid unicode escape sequence: {}", hexString);
-          return '?';
-        } else {
-          throw new IllegalStateException("Illegal Java unicode escape sequence: \\u" + hexString);
-        }
+        String message = "Illegal escape sequence \\u" + hexString;
+        addMessage(severity, message);
+        return '?';
       }
       value = (value * radix) + digit;
       i++;
@@ -755,33 +854,54 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     return (char) value;
   }
 
+  @SuppressWarnings("null")
   @Override
   public String read(int count) {
 
-    if (!hasNext()) {
+    if (!hasNext() || (count == 0)) {
       return "";
     }
-    int len = this.limit - this.offset;
+    StringBuilder builder = null;
     int remain = count;
-    if ((count > len) && isEos()) {
-      remain = len;
-    }
-    if (len >= remain) {
-      String string = new String(this.buffer, this.offset, remain);
-      this.offset += remain;
-      return string;
-    }
-    StringBuilder builder = builder(null);
     while (remain > 0) {
+      int len = this.limit - this.offset;
+      if (len >= remain) {
+        if (builder == null) {
+          String string = new String(this.buffer, this.offset, remain);
+          setOffset(this.offset + remain);
+          return string;
+        }
+        len = remain;
+      }
+      builder = builder(builder);
       builder.append(this.buffer, this.offset, len);
+      setOffset(this.offset + len);
       remain -= len;
-      if (fill()) {
-        len = this.limit - this.offset;
-      } else {
-        return builder.toString();
+      if ((remain > 0) && !fill()) {
+        break;
       }
     }
     return builder.toString();
+  }
+
+  @Override
+  public void read(int count, StringBuilder builder) {
+
+    if (hasNext() && (count > 0)) {
+      int remain = count;
+      while (remain > 0) {
+        int len = this.limit - this.offset;
+        if (len > remain) {
+          len = remain;
+        }
+        builder.append(this.buffer, this.offset, len);
+        setOffset(this.offset + len);
+        remain -= len;
+        if ((remain > 0) && !fill()) {
+          break;
+        }
+      }
+    }
   }
 
   @Override
@@ -802,6 +922,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
       }
       if ((value >= 0) && (value < radix)) {
         result = value;
+        handleChar(c);
         this.offset++;
       }
     }
@@ -809,64 +930,52 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
   }
 
   @Override
-  public String consumeDecimal() {
+  public String readDecimal() {
 
-    StringBuilder builder = null;
-    boolean noSign = false;
+    StringBuilder builder = builder(null);
+    boolean start = true;
     boolean noExponent = false;
     boolean noDot = false;
-    boolean done = false;
+    int i = 0;
     char c = 0;
-    hasNext();
+    char c0 = 0; // previous character
     while (true) {
-      int start = this.offset;
-      while (this.offset < this.limit) {
-        c = this.buffer[this.offset];
-        if ((c == '+') || (c == '-')) {
-          if (noSign) {
-            done = true;
-            break;
-          } else {
-            noSign = true;
-          }
-        } else if (c == 'e') {
-          if (noExponent) {
-            done = true;
-            break;
-          } else {
-            noExponent = true;
-            noSign = false;
-            noDot = true;
-          }
-        } else if (c == '.') {
-          if (noDot) {
-            done = true;
-            break;
-          } else {
-            noDot = true;
-          }
-        } else if ((c >= '0') && (c <= '9')) {
-          noSign = true;
+      c0 = c;
+      c = peek(i++);
+      if ((c >= '0') && (c <= '9')) {
+        if (i == 1) {
+          builder.append(next());
         } else {
-          done = true;
+          read(i, builder);
+        }
+        i = 0;
+      } else if ((c == '+') || (c == '-')) {
+        // sign (+/-) is only allowed at the beginning or directly after e/E for exponent
+        if (!start && (c0 != 'e') && (c0 != 'E')) {
           break;
         }
-        this.offset++;
-      }
-      if (done) {
-        return getAppended(builder, start, this.offset);
-      }
-      int len = this.offset - start;
-      if (len > 0) {
-        builder = append(builder, start, this.offset);
-      }
-      if (done || !fill()) {
-        if (builder == null) {
-          throw new IllegalStateException("Invalid character for decimal number: " + c);
+      } else if ((c == 'e') || (c == 'E')) {
+        if (noExponent || (builder.length() == 0)) {
+          break;
+        } else {
+          noExponent = true;
+          noDot = true;
         }
-        return builder.toString();
+      } else if (c == '.') {
+        if (noDot) {
+          break;
+        } else {
+          noDot = true;
+        }
+      } else {
+        break;
       }
+      start = false;
     }
+    if (builder.length() == 0) {
+      return null;
+    }
+    return builder.toString();
   }
 
   @Override
@@ -974,6 +1083,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
         if (this.buffer[this.offset] != c) {
           return count + (this.offset - start);
         }
+        handleChar(c);
         this.offset++;
       }
       count += (this.offset - start);
@@ -999,10 +1109,12 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
       }
       boolean notAccepted = false;
       while (this.offset < end) {
-        if (!filter.accept(this.buffer[this.offset])) {
+        char c = this.buffer[this.offset];
+        if (!filter.accept(c)) {
           notAccepted = true;
           break;
         }
+        handleChar(c);
         this.offset++;
       }
       int len = this.offset - start;
@@ -1021,7 +1133,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     if (subLength == 0) {
       return true;
     }
-    verifyLookahead(substring);
+    verifyLookahead(subLength);
     if (!hasNext()) {
       return false;
     }
@@ -1050,10 +1162,13 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
           if (found) {
             return true;
           }
+        } else {
+          handleChar(c);
         }
         this.offset++;
       }
       if (!fill()) {
+        // TODO reset text position
         // substring not found (EOT)
         this.offset = this.limit;
         return false;
@@ -1082,9 +1197,11 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
         end = this.limit;
       }
       while (this.offset < end) {
-        if (!filter.accept(this.buffer[this.offset])) {
+        char c = this.buffer[this.offset];
+        if (!filter.accept(c)) {
           return getAppended(builder, start, this.offset);
         }
+        handleChar(c);
         this.offset++;
       }
       int len = this.offset - start;
@@ -1106,10 +1223,6 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     return new String(this.buffer, 0, this.offset);
   }
 
-  /**
-   * @return the {@link String} with the characters that have not yet been parsed but are available in the underlying
-   *         buffer. May be used for debugging or error messages.
-   */
   @Override
   public String getBufferToParse() {
 
