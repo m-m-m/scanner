@@ -5,7 +5,6 @@ package io.github.mmm.scanner;
 import java.io.IOException;
 import java.io.Reader;
 
-import io.github.mmm.base.text.CaseHelper;
 import io.github.mmm.base.text.TextFormatMessageHandler;
 
 /**
@@ -299,7 +298,7 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
   }
 
   @Override
-  public boolean expectStrict(String expected, boolean ignoreCase, boolean lookahead) {
+  public boolean expect(String expected, boolean ignoreCase, boolean lookahead, int off) {
 
     int expectedLength = expected.length();
     if (expectedLength == 0) {
@@ -308,32 +307,26 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
     if (!hasNext()) {
       return false;
     }
+    int myOffset = this.offset + off;
     if (isEos()) {
-      int rest = this.lookaheadLimit + (this.limit - this.offset);
+      int rest = this.lookaheadLimit + (this.limit - myOffset);
       if (expectedLength > rest) {
         return false;
       }
     } else {
       verifyLookahead(expectedLength);
     }
-    char[] expectedChars;
-    if (ignoreCase) {
-      expectedChars = CaseHelper.toLowerCase(expected).toCharArray();
-    } else {
-      expectedChars = expected.toCharArray();
-    }
-    int myOffset = this.offset;
     int myLimit = this.limit;
     char[] myBuffer = this.buffer;
     int expectedIndex = 0;
     while (expectedIndex < expectedLength) {
       char c = myBuffer[myOffset++];
-      char exp = expectedChars[expectedIndex++];
+      char exp = expected.charAt(expectedIndex++);
       if (c != exp) {
         if (!ignoreCase) {
           return false;
         }
-        if (Character.toLowerCase(c) != exp) {
+        if (Character.toLowerCase(c) != Character.toLowerCase(exp)) {
           return false;
         }
       }

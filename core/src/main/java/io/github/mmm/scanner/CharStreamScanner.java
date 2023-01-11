@@ -109,357 +109,6 @@ public interface CharStreamScanner extends TextFormatProcessor {
   int getPosition();
 
   /**
-   * This method reads the {@link #next() next character} if it is a digit. Else the state remains unchanged.
-   *
-   * @return the numeric value of the next Latin digit (e.g. {@code 0} if {@code '0'}) or {@code -1} if the
-   *         {@link #next() next character} is no Latin digit.
-   */
-  default int readDigit() {
-
-    return readDigit(10);
-  }
-
-  /**
-   * This method reads the {@link #next() next character} if it is a digit within the given {@code radix}. Else the
-   * state remains unchanged.
-   *
-   * @param radix the radix that defines the range of the digits. See {@link Integer#parseInt(String, int)}. E.g.
-   *        {@code 10} to read any Latin digit (see {@link #readDigit()}), {@code 8} to read octal digit, {@code 16} to
-   *        read hex decimal digits.
-   * @return the numeric value of the next digit within the given {@code radix} or {@code -1} if the {@link #next() next
-   *         character} is no such digit.
-   */
-  int readDigit(int radix);
-
-  /**
-   * This method reads the long starting at the current position by reading as many Latin digits as available but at
-   * maximum the given {@code maxDigits} and returns its {@link Long#parseLong(String) parsed} value. <br>
-   * <b>ATTENTION:</b><br>
-   * This method does NOT treat signs ({@code +} or {@code -}) to do so, scan them yourself before and negate the result
-   * as needed.
-   *
-   * @param maxDigits is the maximum number of digits that will be read. The value has to be positive (greater than
-   *        zero). Should not be greater than {@code 19} as this will exceed the range of {@code long}.
-   * @return the parsed number.
-   * @throws NumberFormatException if the current current position does NOT point to a number.
-   */
-  long readLong(int maxDigits) throws NumberFormatException;
-
-  /**
-   * This method reads the double value (decimal number) starting at the current position by reading as many matching
-   * characters as available and returns its {@link Double#parseDouble(String) parsed} value. <br>
-   *
-   * @return the parsed {@code double} number or {@code null} if the current current position does not point to a
-   *         number.
-   */
-  default Double readDouble() {
-
-    String number = readDecimal();
-    if (number == null) {
-      return null;
-    }
-    return Double.valueOf(number);
-  }
-
-  /**
-   * This method reads a {@link Float} value from the current position {@link #next() consuming} as many matching
-   * characters as available.
-   *
-   * @return the parsed {@link Float} value or {@code null} if the current current position does not point to a
-   *         {@link Float} number.
-   * @throws NumberFormatException if the current current position does NOT point to a number.
-   */
-  default Float readFloat() throws NumberFormatException {
-
-    String number = readDecimal();
-    if (number == null) {
-      return null;
-    }
-    return Float.valueOf(number);
-  }
-
-  /**
-   * Consumes the characters of a decimal number (double, float, BigDecimal, etc.).
-   *
-   * @return the decimal number as {@link String} or {@code null} if no decimal value was found.
-   */
-  String readDecimal();
-
-  /**
-   * This method skips all {@link #next() next characters} as long as they equal to the according character of the
-   * {@code expected} {@link String}. <br>
-   * If a character differs this method stops and the parser points to the first character that differs from
-   * {@code expected}. Except for the latter circumstance, this method behaves similar to the following code:
-   *
-   * <pre>
-   * {@link #read(int) read}(expected.length).equals(expected)
-   * </pre>
-   *
-   * <b>ATTENTION:</b><br>
-   * In most cases you want to prefer {@link #expectStrict(String)} instead of using this method. Only in specific cases
-   * and for highly optimized performance it may make sense to use it. In such case be careful and consider to combine
-   * with {@link #getPosition()} to be able to determine whether characters have been consumed if {@code false} was
-   * returned (e.g. otherwise when doing {@link #expectUnsafe(String) expectUnsafe}("false") and else doing
-   * {@link #expectUnsafe(String) expectUnsafe}("true") to parse a {@code boolean} literal your code could accept
-   * "falstrue" as "true").
-   *
-   * @param expected is the expected string.
-   * @return {@code true} if the {@code expected} string was successfully consumed from this scanner, {@code false}
-   *         otherwise.
-   * @see #expectStrict(String)
-   */
-  default boolean expectUnsafe(String expected) {
-
-    return expectUnsafe(expected, false);
-  }
-
-  /**
-   * This method skips all {@link #next() next characters} as long as they equal to the according character of the
-   * {@code expected} string. <br>
-   * If a character differs this method stops and the parser points to the first character that differs from
-   * {@code expected}. Except for the latter circumstance, this method behaves similar to the following code:
-   *
-   * <pre>
-   * {@link #read(int) read}(expected.length).equals[IgnoreCase](expected)
-   * </pre>
-   *
-   * <b>ATTENTION:</b><br>
-   * In most cases you want to prefer {@link #expectStrict(String, boolean)} instead of using this method. See
-   * {@link #expectUnsafe(String)} for details.
-   *
-   * @param expected is the expected string.
-   * @param ignoreCase - if {@code true} the case of the characters is ignored when compared.
-   * @return {@code true} if the {@code expected} string was successfully consumed from this scanner, {@code false}
-   *         otherwise.
-   * @see #expectStrict(String, boolean)
-   */
-  boolean expectUnsafe(String expected, boolean ignoreCase);
-
-  /**
-   * This method determines if the given {@code expected} {@link String} is completely present at the current position.
-   * It will only {@link #next() consume} characters and change the state if the {@code expected} {@link String} was
-   * found (entirely).<br>
-   * <b>Attention:</b><br>
-   * This method requires lookahead. For implementations that are backed by an underlying stream (or reader) the
-   * {@link String#length() length} of the expected {@link String} shall not exceed the available lookahead size (buffer
-   * capacity given at construction time). Otherwise the method may fail.
-   *
-   * @param expected is the expected string.
-   * @return {@code true} if the {@code expected} string was successfully consumed from this scanner, {@code false}
-   *         otherwise.
-   * @see #expectUnsafe(String)
-   */
-  default boolean expectStrict(String expected) {
-
-    return expectStrict(expected, false);
-  }
-
-  /**
-   * This method determines if the given {@code expected} {@link String} is completely present at the current position.
-   * It will only {@link #next() consume} characters and change the state if the {@code expected} {@link String} was
-   * found (entirely).<br>
-   * <b>Attention:</b><br>
-   * This method requires lookahead. For implementations that are backed by an underlying stream (or reader) the
-   * {@link String#length() length} of the expected {@link String} shall not exceed the available lookahead size (buffer
-   * capacity given at construction time). Otherwise the method may fail.
-   *
-   * @param expected the expected {@link String} to search for.
-   * @param ignoreCase - if {@code true} the case of the characters is ignored when compared, {@code false} otherwise.
-   * @return {@code true} if the {@code expected} string was successfully found and {@link #next() consume} from this
-   *         scanner, {@code false} otherwise.
-   * @see #expectUnsafe(String, boolean)
-   */
-  default boolean expectStrict(String expected, boolean ignoreCase) {
-
-    return expectStrict(expected, ignoreCase, false);
-  }
-
-  /**
-   * This method determines if the given {@code expected} {@link String} is completely present at the current position.
-   * It will only {@link #next() consume} characters and change the state if {@code lookahead} is {@code false} and the
-   * {@code expected} {@link String} was found (entirely).<br>
-   * <b>Attention:</b><br>
-   * This method requires lookahead. For implementations that are backed by an underlying stream (or reader) the
-   * {@link String#length() length} of the expected {@link String} shall not exceed the available lookahead size (buffer
-   * capacity given at construction time). Otherwise the method may fail.
-   *
-   * @param expected the expected {@link String} to search for.
-   * @param ignoreCase - if {@code true} the case of the characters is ignored when compared, {@code false} otherwise.
-   * @param lookahead - if {@code true} the state of the scanner remains unchanged even if the expected {@link String}
-   *        has been found, {@code false} otherwise (expected {@link String} is consumed on match).
-   * @return {@code true} if the {@code expected} string was successfully found, {@code false} otherwise.
-   */
-  boolean expectStrict(String expected, boolean ignoreCase, boolean lookahead);
-
-  /**
-   * This method checks that the {@link #next() next character} is equal to the given {@code expected} character. <br>
-   * If the current character was as expected, the parser points to the next character. Otherwise its position will
-   * remain unchanged.
-   *
-   * @param expected is the expected character.
-   * @return {@code true} if the current character is the same as {@code expected}, {@code false} otherwise.
-   */
-  boolean expectOne(char expected);
-
-  /**
-   * This method checks that the {@link #next() next character} is {@link CharFilter#accept(char) accepted} by the given
-   * {@link CharFilter}. <br>
-   * If the current character was as expected, the parser points to the next character. Otherwise its position will
-   * remain unchanged.
-   *
-   * @param expected is the {@link CharFilter} {@link CharFilter#accept(char) accepting} the expected chars.
-   * @return {@code true} if the current character is {@link CharFilter#accept(char) accepted}, {@code false} otherwise.
-   */
-  default boolean expectOne(CharFilter expected) {
-
-    if (!hasNext()) {
-      return false;
-    }
-    if (expected.accept(peek())) {
-      next();
-      return true;
-    }
-    return false;
-  }
-
-  /**
-   * This method verifies that the {@link #next() next character} is equal to the given {@code expected} character. <br>
-   * If the current character was as expected, the parser points to the next character. Otherwise an exception is thrown
-   * indicating the problem.
-   *
-   * @param expected is the expected character.
-   * @throws IllegalStateException if the required character was not found.
-   */
-  default void requireOne(char expected) throws IllegalStateException {
-
-    if (!hasNext()) {
-      throw new IllegalStateException("Expecting '" + expected + "' but found end-of-stream.");
-    }
-    char next = peek();
-    if (next != expected) {
-      throw new IllegalStateException("Expecting '" + expected + "' but found: " + next);
-    }
-    next();
-  }
-
-  /**
-   * This method verifies that the {@code expected} string gets consumed from this scanner with respect to
-   * {@code ignoreCase}. Otherwise an exception is thrown indicating the problem. <br>
-   * This method behaves functionally equivalent to the following code:
-   *
-   * <pre>
-   * if (!scanner.{@link #expectUnsafe(String, boolean) expectUnsafe}(expected, ignoreCase)) {
-   *   throw new {@link IllegalStateException}(...);
-   * }
-   * </pre>
-   *
-   * @param expected is the expected string.
-   * @param ignoreCase - if {@code true} the case of the characters is ignored during comparison.
-   */
-  void require(String expected, boolean ignoreCase);
-
-  /**
-   * @param filter the {@link CharFilter} {@link CharFilter#accept(char) accepting} the expected characters to
-   *        {@link #skipWhile(CharFilter, int) skip}.
-   * @return the actual number of characters that have been skipped.
-   * @throws IllegalStateException if less than {@code 1} or more than {@code 1000} {@link CharFilter#accept(char)
-   *         accepted} characters have been consumed.
-   */
-  default int requireOne(CharFilter filter) {
-
-    return require(filter, 1, -1);
-  }
-
-  /**
-   * @param filter the {@link CharFilter} {@link CharFilter#accept(char) accepting} the expected characters to
-   *        {@link #skipWhile(CharFilter, int) skip}.
-   * @return the actual number of characters that have been skipped.
-   * @throws IllegalStateException if less than {@code 1} or more than {@code 1000} {@link CharFilter#accept(char)
-   *         accepted} characters have been consumed.
-   */
-  default int requireOneOrMore(CharFilter filter) {
-
-    return require(filter, 1);
-  }
-
-  /**
-   * @param filter the {@link CharFilter} {@link CharFilter#accept(char) accepting} the expected characters to
-   *        {@link #skipWhile(CharFilter, int) skip}.
-   * @param min the minimum required number of skipped characters.
-   * @return the actual number of characters that have been skipped.
-   * @throws IllegalStateException if less than {@code min} or more than {@code 1000} {@link CharFilter#accept(char)
-   *         accepted} characters have been consumed.
-   */
-  default int require(CharFilter filter, int min) {
-
-    return require(filter, min, 1000);
-  }
-
-  /**
-   * @param filter the {@link CharFilter} {@link CharFilter#accept(char) accepting} the expected characters to
-   *        {@link #skipWhile(CharFilter, int) skip}.
-   * @param min the minimum required number of skipped characters.
-   * @param max the maximum number of skipped characters.
-   * @return the actual number of characters that have been skipped.
-   * @throws IllegalStateException if less than {@code min} or more than {@code max} {@link CharFilter#accept(char)
-   *         accepted} characters have been consumed.
-   */
-  default int require(CharFilter filter, int min, int max) {
-
-    if ((min < 0) || ((min > max) && (max != -1))) {
-      throw new IllegalArgumentException("Invalid range: " + min + "-" + max);
-    }
-    int num = max;
-    if (max == -1) {
-      num = min;
-    }
-    int count = skipWhile(filter, num);
-    if (count < min) {
-      invalidCharCount("at least " + min, count, filter);
-    }
-    if (count == max) {
-      char c = peek();
-      if (!filter.accept(c)) {
-        invalidCharCount("up to " + max, count, filter);
-      }
-    }
-    return count;
-  }
-
-  private IllegalStateException invalidCharCount(String bound, int count, CharFilter filter) {
-
-    String description = filter.getDescription();
-    String chars = " character(s)";
-    if (!CharFilter.NO_DESCRIPTION.equals(description)) {
-      chars = " character(s) matching " + description;
-    }
-    throw new IllegalStateException("Require " + bound + chars + " but found only " + count);
-  }
-
-  /**
-   * This method skips all {@link #next() next characters} until the given {@code stop} character or the end is reached.
-   * If the {@code stop} character was reached, this scanner will point to the next character after {@code stop} when
-   * this method returns.
-   *
-   * @param stop is the character to read until.
-   * @return {@code true} if the first occurrence of the given {@code stop} character has been passed, {@code false} if
-   *         there is no such character.
-   */
-  boolean skipUntil(char stop);
-
-  /**
-   * This method reads all {@link #next() next characters} until the given {@code stop} character or the end of the
-   * string to parse is reached. In advance to {@link #skipUntil(char)}, this method will read over the {@code stop}
-   * character if it is escaped with the given {@code escape} character.
-   *
-   * @param stop is the character to read until.
-   * @param escape is the character used to escape the stop character (e.g. '\').
-   * @return {@code true} if the first occurrence of the given {@code stop} character has been passed, {@code false} if
-   *         there is no such character.
-   */
-  boolean skipUntil(char stop, char escape);
-
-  /**
    * This method reads all {@link #next() next characters} until the given {@code stop} character or the end is reached.
    * <br>
    * After the call of this method, the current index will point to the next character after the (first) {@code stop}
@@ -661,6 +310,662 @@ public interface CharStreamScanner extends TextFormatProcessor {
   String readWhile(CharFilter filter, int max);
 
   /**
+   * @return a {@link String} with the data until the end of the current line or the end of the data. Will be
+   *         {@code null} if the end has already been reached and {@link #hasNext()} returns {@code false}.
+   */
+  default String readLine() {
+
+    return readLine(false);
+  }
+
+  /**
+   * @param trim - {@code true} if the result should be {@link String#trim() trimmed}, {@code false} otherwise.
+   * @return a {@link String} with the data until the end of the current line ({@link String#trim() trimmed} if
+   *         {@code trim} is {@code true}) or the end of the data. Will be {@code null} if the end has already been
+   *         reached and {@link #hasNext()} returns {@code false}.
+   */
+  String readLine(boolean trim);
+
+  /**
+   * Reads a {@link Boolean} value from this scanner if available.
+   *
+   * @return the consumed {@link Boolean} value or {@code null} if no such value was available and the
+   *         {@link #getPosition() position} remains unchanged.
+   */
+  default Boolean readBoolean() {
+
+    return readBoolean(false, false);
+  }
+
+  /**
+   * Reads a {@link Boolean} value from this scanner if available.
+   *
+   * @param ignoreCase - if {@code true} the case of the characters is ignored when compared, {@code false} otherwise
+   *        (only lower case is accepted).
+   * @return the consumed {@link Boolean} value or {@code null} if no such value was available and the
+   *         {@link #getPosition() position} remains unchanged.
+   */
+  default Boolean readBoolean(boolean ignoreCase) {
+
+    return readBoolean(ignoreCase, false);
+  }
+
+  /**
+   * Reads a {@link Boolean} value from this scanner if available.
+   *
+   * @param ignoreCase - if {@code true} the case of the characters is ignored when compared, {@code false} otherwise
+   *        (only lower case is accepted).
+   * @param acceptYesNo - if {@code true} also "yes" is accepted for {@code true} and "no" for {@code false},
+   *        {@code false} otherwise.
+   * @return the consumed {@link Boolean} value or {@code null} if no such value was available and the
+   *         {@link #getPosition() position} remains unchanged.
+   */
+  default Boolean readBoolean(boolean ignoreCase, boolean acceptYesNo) {
+
+    if (expect("true", ignoreCase)) {
+      return Boolean.TRUE;
+    } else if (expect("false", ignoreCase)) {
+      return Boolean.FALSE;
+    } else if (!acceptYesNo) {
+      return null;
+    } else if (expect("yes", ignoreCase)) {
+      return Boolean.TRUE;
+    } else if (expect("no", ignoreCase)) {
+      return Boolean.FALSE;
+    }
+    return null;
+  }
+
+  /**
+   * Consumes the characters of a decimal number (double, float, BigDecimal, etc.).
+   *
+   * @return the decimal number as {@link String} or {@code null} if no decimal value was found.
+   */
+  default String readDecimal() {
+
+    return readNumeric(false, true, false, true);
+  }
+
+  /**
+   * Consumes the characters of a {@link Number} (double, float, BigDecimal, etc.).
+   *
+   * @param noSign - {@code true} if no initial sign ('+' or '-') is accepted, {@code false} otherwise (read sign if
+   *        present).
+   * @param decimal - {@code true} to accept decimal numbers with decimal dot and scientific notation (1.2e-3),
+   *        {@code false} otherwise (integer only).
+   * @param customRadix - {@code true} to allow custom radix (e.g. "0xFF" or "0b1101"), {@code false} otherwise.
+   *        Typically custom radix is not used for decimal but only for integer numbers.
+   * @param nonNumbers - {@code true} to accept also {@link Double#NaN NaN} and (-){@link Double#POSITIVE_INFINITY
+   *        Infinity}, {@code false} otherwise.
+   * @return the decimal number as {@link String} or {@code null} if no decimal value was found.
+   */
+  String readNumeric(boolean noSign, boolean decimal, boolean customRadix, boolean nonNumbers);
+
+  /**
+   * This method reads the double value (decimal number) starting at the current position by reading as many matching
+   * characters as available and returns its {@link Double#parseDouble(String) parsed} value. <br>
+   *
+   * @return the parsed {@code double} number or {@code null} if the current current position does not point to a
+   *         number.
+   */
+  default Double readDouble() {
+
+    String number = readDecimal();
+    if (number == null) {
+      return null;
+    }
+    return Double.valueOf(number);
+  }
+
+  /**
+   * This method reads the double value (decimal number) starting at the current position by reading as many matching
+   * characters as available and returns its {@link Double#parseDouble(String) parsed} value. <br>
+   *
+   * @return the parsed {@code double} number or {@code null} if the current current position does not point to a
+   *         number.
+   */
+  default Double readDouble(boolean customRadix) {
+
+    String number = readNumeric(false, true, customRadix, true);
+    if (number == null) {
+      return null;
+    }
+    return Double.valueOf(number);
+  }
+
+  /**
+   * This method reads a {@link Float} value from the current position {@link #next() consuming} as many matching
+   * characters as available.
+   *
+   * @return the parsed {@link Float} value or {@code null} if the current current position does not point to a
+   *         {@link Float} number.
+   * @throws NumberFormatException if the current current position does NOT point to a number.
+   */
+  default Float readFloat() throws NumberFormatException {
+
+    String number = readDecimal();
+    if (number == null) {
+      return null;
+    }
+    return Float.valueOf(number);
+  }
+
+  /**
+   * @return the consumed {@link Long} value or {@code null} if no such value was present and the {@link #getPosition()
+   *         position} remains unchanged.
+   * @throws NumberFormatException if the current current position does not point to a {@link Long} value.
+   */
+  default Long readLong() throws NumberFormatException {
+
+    return readLong(NumericRadixMode.ONLY_10, false, Long.MAX_VALUE);
+  }
+
+  /**
+   * @param radixMode the {@link NumericRadixMode}.
+   * @param noSign - {@code true} if no sign ('+' or '-')is accepted, {@code false} otherwise (read sign if present).
+   * @param max the maximum allowed number (e.g. {@link Integer#MAX_VALUE} to parse an {@link Integer} value).
+   * @return the consumed {@link Long} value or {@code null} if no such value was present and the {@link #getPosition()
+   *         position} remains unchanged.
+   * @throws NumberFormatException if the current current position does not point to a {@link Long} value.
+   */
+  default Long readLong(NumericRadixMode radixMode, boolean noSign) throws NumberFormatException {
+
+    return readLong(radixMode, noSign, Long.MAX_VALUE);
+  }
+
+  /**
+   * @param radixMode the {@link NumericRadixMode}.
+   * @param noSign - {@code true} if no sign ('+' or '-')is accepted, {@code false} otherwise (read sign if present).
+   * @param max the maximum allowed number (e.g. {@link Integer#MAX_VALUE} to parse an {@link Integer} value).
+   * @return the consumed {@link Long} value or {@code null} if no such value was present and the {@link #getPosition()
+   *         position} remains unchanged.
+   * @throws NumberFormatException if the current current position does not point to a {@link Long} value.
+   */
+  Long readLong(NumericRadixMode radixMode, boolean noSign, long max) throws NumberFormatException;
+
+  /**
+   * @return the consumed {@link Integer} value or {@code null} if no such value was present and the
+   *         {@link #getPosition() position} remains unchanged.
+   * @throws NumberFormatException if the current current position does not point to a {@link Integer} value.
+   */
+  default Integer readInteger() throws NumberFormatException {
+
+    return readInteger(NumericRadixMode.ONLY_10, false);
+  }
+
+  /**
+   * @param radixMode the {@link NumericRadixMode}.
+   * @param noSign - {@code true} if no sign ('+' or '-')is accepted, {@code false} otherwise (read sign if present).
+   * @return the consumed {@link Integer} value or {@code null} if no such value was present and the
+   *         {@link #getPosition() position} remains unchanged.
+   * @throws NumberFormatException if the current current position does not point to a {@link Long} value.
+   */
+  default Integer readInteger(NumericRadixMode radixMode, boolean noSign) throws NumberFormatException {
+
+    return readInteger(radixMode, noSign, Integer.MAX_VALUE);
+  }
+
+  /**
+   * @param radixMode the {@link NumericRadixMode}.
+   * @param noSign - {@code true} if no sign ('+' or '-')is accepted, {@code false} otherwise (read sign if present).
+   * @param max the maximum allowed number (e.g. {@link Integer#MAX_VALUE} to parse an {@link Integer} value).
+   * @return the consumed {@link Integer} value or {@code null} if no such value was present and the
+   *         {@link #getPosition() position} remains unchanged.
+   * @throws NumberFormatException if the current current position does not point to a {@link Long} value.
+   */
+  default Integer readInteger(NumericRadixMode radixMode, boolean noSign, int max) throws NumberFormatException {
+
+    Long value = readLong(radixMode, noSign, max);
+    if (value == null) {
+      return null;
+    }
+    return Integer.valueOf((int) value.longValue());
+  }
+
+  /**
+   * Reads a Java {@link Number} literal (e.g. "1L" or "1.3F").
+   *
+   * @return the consumed {@link Number} or {@code null} if no number literal was found and the {@link #getPosition()
+   *         position} remains unchainged.
+   * @throws NumberFormatException if a number literal was found that has an illegal format.
+   */
+  Number readJavaNumberLiteral();
+
+  /**
+   * This method reads the {@link #next() next character} if it is a digit. Else the state remains unchanged.
+   *
+   * @return the numeric value of the next Latin digit (e.g. {@code 0} if {@code '0'}) or {@code -1} if the
+   *         {@link #next() next character} is no Latin digit.
+   */
+  default int readDigit() {
+
+    return readDigit(10);
+  }
+
+  /**
+   * This method reads the {@link #next() next character} if it is a digit within the given {@code radix}. Else the
+   * state remains unchanged.
+   *
+   * @param radix the radix that defines the range of the digits. See {@link Integer#parseInt(String, int)}. E.g.
+   *        {@code 10} to read any Latin digit (see {@link #readDigit()}), {@code 8} to read octal digit, {@code 16} to
+   *        read hex decimal digits.
+   * @return the numeric value of the next digit within the given {@code radix} or {@code -1} if the {@link #next() next
+   *         character} is no such digit.
+   */
+  int readDigit(int radix);
+
+  /**
+   * This method reads the long starting at the current position by reading as many Latin digits as available but at
+   * maximum the given {@code maxDigits} and returns its {@link Long#parseLong(String) parsed} value. <br>
+   * <b>ATTENTION:</b><br>
+   * This method does NOT treat signs ({@code +} or {@code -}) to do so, scan them yourself before and negate the result
+   * as needed.
+   *
+   * @param maxDigits is the maximum number of digits that will be read. The value has to be positive (greater than
+   *        zero). Should not be greater than {@code 19} as this will exceed the range of {@code long}.
+   * @return the parsed number.
+   * @throws NumberFormatException if the current current position does NOT point to a number.
+   */
+  long readUnsignedLong(int maxDigits) throws NumberFormatException;
+
+  /**
+   * Reads and parses a Java {@link String} literal value according to JLS 3.10.6. <br>
+   * As a complex example for the input "Hi \"\176\477\579\u2022\uuuuu2211\"\n" this scanner would return the
+   * {@link String} output {@code Hi "~'7/9•∑"} followed by a newline character.
+   *
+   * @return the parsed Java {@link String} literal value or {@code null} if not pointing to a {@link String} literal.
+   */
+  default String readJavaStringLiteral() {
+
+    return readJavaStringLiteral(TextFormatMessageType.ERROR);
+  }
+
+  /**
+   * Reads and parses a Java {@link String} literal value according to JLS 3.10.6. <br>
+   * As a complex example for the input "Hi \"\176\477\579\u2022\uuuuu2211\"\n" this scanner would return the
+   * {@link String} output {@code Hi "~'7/9•∑"} followed by a newline character.
+   *
+   * @param severity the {@link TextFormatMessageType} to use to report invalid escape sequences or missing terminating
+   *        quotation.
+   * @return the parsed Java {@link String} literal value or {@code null} if not pointing to a {@link String} literal.
+   */
+  String readJavaStringLiteral(TextFormatMessageType severity);
+
+  /**
+   * Reads and parses a Java {@link Character} literal value according to JLS 3.10.6. <br>
+   * Examples are given in the following table:
+   * <table border="1">
+   * <tr>
+   * <th>literal</th>
+   * <th>result</th>
+   * <th>comment</th>
+   * </tr>
+   * <tr>
+   * <td>{@code 'a'}</td>
+   * <td>a</td>
+   * <td>regular char</td>
+   * </tr>
+   * <tr>
+   * <td>{@code '\''}</td>
+   * <td>'</td>
+   * <td>escaped char</td>
+   * </tr>
+   * <tr>
+   * <td>{@code '\176'}</td>
+   * <td>~</td>
+   * <td>escaped octal representation</td>
+   * </tr>
+   * <tr>
+   * <td>{@code '\u2022'}</td>
+   * <td>•</td>
+   * <td>escaped unicode representation</td>
+   * </tr>
+   * </table>
+   *
+   * @return the parsed Java {@link String} literal value or {@code null} if not pointing to a {@link String} literal.
+   */
+  default Character readJavaCharLiteral() {
+
+    return readJavaCharLiteral(TextFormatMessageType.ERROR);
+  }
+
+  /**
+   * Reads and parses a Java {@link Character} literal value according to JLS 3.10.6. <br>
+   * Examples are given in the following table:
+   * <table border="1">
+   * <tr>
+   * <th>literal</th>
+   * <th>result</th>
+   * <th>comment</th>
+   * </tr>
+   * <tr>
+   * <td>{@code 'a'}</td>
+   * <td>a</td>
+   * <td>regular char</td>
+   * </tr>
+   * <tr>
+   * <td>{@code '\''}</td>
+   * <td>'</td>
+   * <td>escaped char</td>
+   * </tr>
+   * <tr>
+   * <td>{@code '\176'}</td>
+   * <td>~</td>
+   * <td>escaped octal representation</td>
+   * </tr>
+   * <tr>
+   * <td>{@code '\u2022'}</td>
+   * <td>•</td>
+   * <td>escaped unicode representation</td>
+   * </tr>
+   * </table>
+   *
+   * @param severity the {@link TextFormatMessageType} to use to report invalid escape sequences or missing terminating
+   *        quotation.
+   * @return the parsed Java {@link Character} literal value or {@code null} if not pointing to a {@link Character}
+   *         literal.
+   */
+  Character readJavaCharLiteral(TextFormatMessageType severity);
+
+  /**
+   * This method determines if the given {@code expected} {@link String} is completely present at the current position.
+   * It will only {@link #next() consume} characters and change the state if the {@code expected} {@link String} was
+   * found (entirely).<br>
+   * <b>Attention:</b><br>
+   * This method requires lookahead. For implementations that are backed by an underlying stream (or reader) the
+   * {@link String#length() length} of the expected {@link String} shall not exceed the available lookahead size (buffer
+   * capacity given at construction time). Otherwise the method may fail.
+   *
+   * @param expected is the expected string.
+   * @return {@code true} if the {@code expected} string was successfully consumed from this scanner, {@code false}
+   *         otherwise.
+   * @see #expectUnsafe(String)
+   */
+  default boolean expect(String expected) {
+
+    return expect(expected, false, false, 0);
+  }
+
+  /**
+   * This method determines if the given {@code expected} {@link String} is completely present at the current position.
+   * It will only {@link #next() consume} characters and change the state if the {@code expected} {@link String} was
+   * found (entirely).<br>
+   * <b>Attention:</b><br>
+   * This method requires lookahead. For implementations that are backed by an underlying stream (or reader) the
+   * {@link String#length() length} of the expected {@link String} shall not exceed the available lookahead size (buffer
+   * capacity given at construction time). Otherwise the method may fail.
+   *
+   * @param expected the expected {@link String} to search for.
+   * @param ignoreCase - if {@code true} the case of the characters is ignored when compared, {@code false} otherwise.
+   * @return {@code true} if the {@code expected} string was successfully found and {@link #next() consume} from this
+   *         scanner, {@code false} otherwise.
+   * @see #expectUnsafe(String, boolean)
+   */
+  default boolean expect(String expected, boolean ignoreCase) {
+
+    return expect(expected, ignoreCase, false, 0);
+  }
+
+  /**
+   * This method determines if the given {@code expected} {@link String} is completely present at the current position.
+   * It will only {@link #next() consume} characters and change the state if {@code lookahead} is {@code false} and the
+   * {@code expected} {@link String} was found (entirely).<br>
+   * <b>Attention:</b><br>
+   * This method requires lookahead. For implementations that are backed by an underlying stream (or reader) the
+   * {@link String#length() length} of the expected {@link String} shall not exceed the available lookahead size (buffer
+   * capacity given at construction time). Otherwise the method may fail.
+   *
+   * @param expected the expected {@link String} to search for.
+   * @param ignoreCase - if {@code true} the case of the characters is ignored when compared, {@code false} otherwise.
+   * @param lookahead - if {@code true} the state of the scanner remains unchanged even if the expected {@link String}
+   *        has been found, {@code false} otherwise (expected {@link String} is consumed on match).
+   * @return {@code true} if the {@code expected} string was successfully found, {@code false} otherwise.
+   */
+  default boolean expect(String expected, boolean ignoreCase, boolean lookahead) {
+
+    return expect(expected, ignoreCase, lookahead, 0);
+  }
+
+  /**
+   * This method determines if the given {@code expected} {@link String} is completely present at the current position.
+   * It will only {@link #next() consume} characters and change the state if {@code lookahead} is {@code false} and the
+   * {@code expected} {@link String} was found (entirely).<br>
+   * <b>Attention:</b><br>
+   * This method requires lookahead. For implementations that are backed by an underlying stream (or reader) the
+   * {@link String#length() length} of the expected {@link String} shall not exceed the available lookahead size (buffer
+   * capacity given at construction time). Otherwise the method may fail.
+   *
+   * @param expected the expected {@link String} to search for.
+   * @param ignoreCase - if {@code true} the case of the characters is ignored when compared, {@code false} otherwise.
+   * @param lookahead - if {@code true} the state of the scanner remains unchanged even if the expected {@link String}
+   *        has been found, {@code false} otherwise (expected {@link String} is consumed on match).
+   * @param offset the number of characters that have already been {@link #peek(int) peeked} and after which the given
+   *        {@link String} is expected. Will typically be {@code 0}. If {@code lookahead} is {@code false} and the
+   *        expected {@link String} was found these characters will be {@link #skip(int) skipped} together with the
+   *        expected {@link String}.
+   * @return {@code true} if the {@code expected} string was successfully found, {@code false} otherwise.
+   */
+  boolean expect(String expected, boolean ignoreCase, boolean lookahead, int offset);
+
+  /**
+   * This method checks that the {@link #next() next character} is equal to the given {@code expected} character. <br>
+   * If the current character was as expected, the parser points to the next character. Otherwise its position will
+   * remain unchanged.
+   *
+   * @param expected is the expected character.
+   * @return {@code true} if the current character is the same as {@code expected}, {@code false} otherwise.
+   */
+  boolean expectOne(char expected);
+
+  /**
+   * This method checks that the {@link #next() next character} is {@link CharFilter#accept(char) accepted} by the given
+   * {@link CharFilter}. <br>
+   * If the current character was as expected, the parser points to the next character. Otherwise its position will
+   * remain unchanged.
+   *
+   * @param expected is the {@link CharFilter} {@link CharFilter#accept(char) accepting} the expected chars.
+   * @return {@code true} if the current character is {@link CharFilter#accept(char) accepted}, {@code false} otherwise.
+   */
+  default boolean expectOne(CharFilter expected) {
+
+    if (!hasNext()) {
+      return false;
+    }
+    if (expected.accept(peek())) {
+      next();
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * This method skips all {@link #next() next characters} as long as they equal to the according character of the
+   * {@code expected} {@link String}. <br>
+   * If a character differs this method stops and the parser points to the first character that differs from
+   * {@code expected}. Except for the latter circumstance, this method behaves similar to the following code:
+   *
+   * <pre>
+   * {@link #read(int) read}(expected.length).equals(expected)
+   * </pre>
+   *
+   * <b>ATTENTION:</b><br>
+   * In most cases you want to prefer {@link #expect(String)} instead of using this method. Only in specific cases and
+   * for highly optimized performance it may make sense to use it. In such case be careful and consider to combine with
+   * {@link #getPosition()} to be able to determine whether characters have been consumed if {@code false} was returned
+   * (e.g. otherwise when doing {@link #expectUnsafe(String) expectUnsafe}("false") and else doing
+   * {@link #expectUnsafe(String) expectUnsafe}("true") to parse a {@code boolean} literal your code could accept
+   * "falstrue" as "true").
+   *
+   * @param expected is the expected string.
+   * @return {@code true} if the {@code expected} string was successfully consumed from this scanner, {@code false}
+   *         otherwise.
+   * @see #expect(String)
+   */
+  default boolean expectUnsafe(String expected) {
+
+    return expectUnsafe(expected, false);
+  }
+
+  /**
+   * This method skips all {@link #next() next characters} as long as they equal to the according character of the
+   * {@code expected} string. <br>
+   * If a character differs this method stops and the parser points to the first character that differs from
+   * {@code expected}. Except for the latter circumstance, this method behaves similar to the following code:
+   *
+   * <pre>
+   * {@link #read(int) read}(expected.length).equals[IgnoreCase](expected)
+   * </pre>
+   *
+   * <b>ATTENTION:</b><br>
+   * In most cases you want to prefer {@link #expect(String, boolean)} instead of using this method. See
+   * {@link #expectUnsafe(String)} for details.
+   *
+   * @param expected is the expected string.
+   * @param ignoreCase - if {@code true} the case of the characters is ignored when compared.
+   * @return {@code true} if the {@code expected} string was successfully consumed from this scanner, {@code false}
+   *         otherwise.
+   * @see #expect(String, boolean)
+   */
+  boolean expectUnsafe(String expected, boolean ignoreCase);
+
+  /**
+   * This method verifies that the {@link #next() next character} is equal to the given {@code expected} character. <br>
+   * If the current character was as expected, the parser points to the next character. Otherwise an exception is thrown
+   * indicating the problem.
+   *
+   * @param expected is the expected character.
+   * @throws IllegalStateException if the required character was not found.
+   */
+  default void requireOne(char expected) throws IllegalStateException {
+
+    if (!hasNext()) {
+      throw new IllegalStateException("Expecting '" + expected + "' but found end-of-stream.");
+    }
+    char next = peek();
+    if (next != expected) {
+      throw new IllegalStateException("Expecting '" + expected + "' but found: " + next);
+    }
+    next();
+  }
+
+  /**
+   * This method verifies that the {@code expected} string gets consumed from this scanner with respect to
+   * {@code ignoreCase}. Otherwise an exception is thrown indicating the problem. <br>
+   * This method behaves functionally equivalent to the following code:
+   *
+   * <pre>
+   * if (!scanner.{@link #expectUnsafe(String, boolean) expectUnsafe}(expected, ignoreCase)) {
+   *   throw new {@link IllegalStateException}(...);
+   * }
+   * </pre>
+   *
+   * @param expected is the expected string.
+   * @param ignoreCase - if {@code true} the case of the characters is ignored during comparison.
+   */
+  void require(String expected, boolean ignoreCase);
+
+  /**
+   * @param filter the {@link CharFilter} {@link CharFilter#accept(char) accepting} the expected characters to
+   *        {@link #skipWhile(CharFilter, int) skip}.
+   * @return the actual number of characters that have been skipped.
+   * @throws IllegalStateException if less than {@code 1} or more than {@code 1000} {@link CharFilter#accept(char)
+   *         accepted} characters have been consumed.
+   */
+  default int requireOne(CharFilter filter) {
+
+    return require(filter, 1, -1);
+  }
+
+  /**
+   * @param filter the {@link CharFilter} {@link CharFilter#accept(char) accepting} the expected characters to
+   *        {@link #skipWhile(CharFilter, int) skip}.
+   * @return the actual number of characters that have been skipped.
+   * @throws IllegalStateException if less than {@code 1} or more than {@code 1000} {@link CharFilter#accept(char)
+   *         accepted} characters have been consumed.
+   */
+  default int requireOneOrMore(CharFilter filter) {
+
+    return require(filter, 1);
+  }
+
+  /**
+   * @param filter the {@link CharFilter} {@link CharFilter#accept(char) accepting} the expected characters to
+   *        {@link #skipWhile(CharFilter, int) skip}.
+   * @param min the minimum required number of skipped characters.
+   * @return the actual number of characters that have been skipped.
+   * @throws IllegalStateException if less than {@code min} or more than {@code 1000} {@link CharFilter#accept(char)
+   *         accepted} characters have been consumed.
+   */
+  default int require(CharFilter filter, int min) {
+
+    return require(filter, min, 1000);
+  }
+
+  /**
+   * @param filter the {@link CharFilter} {@link CharFilter#accept(char) accepting} the expected characters to
+   *        {@link #skipWhile(CharFilter, int) skip}.
+   * @param min the minimum required number of skipped characters.
+   * @param max the maximum number of skipped characters.
+   * @return the actual number of characters that have been skipped.
+   * @throws IllegalStateException if less than {@code min} or more than {@code max} {@link CharFilter#accept(char)
+   *         accepted} characters have been consumed.
+   */
+  default int require(CharFilter filter, int min, int max) {
+
+    if ((min < 0) || ((min > max) && (max != -1))) {
+      throw new IllegalArgumentException("Invalid range: " + min + "-" + max);
+    }
+    int num = max;
+    if (max == -1) {
+      num = min;
+    }
+    int count = skipWhile(filter, num);
+    if (count < min) {
+      invalidCharCount("at least " + min, count, filter);
+    }
+    if (count == max) {
+      char c = peek();
+      if (!filter.accept(c)) {
+        invalidCharCount("up to " + max, count, filter);
+      }
+    }
+    return count;
+  }
+
+  private IllegalStateException invalidCharCount(String bound, int count, CharFilter filter) {
+
+    String description = filter.getDescription();
+    String chars = " character(s)";
+    if (!CharFilter.NO_DESCRIPTION.equals(description)) {
+      chars = " character(s) matching " + description;
+    }
+    throw new IllegalStateException("Require " + bound + chars + " but found only " + count);
+  }
+
+  /**
+   * This method skips all {@link #next() next characters} until the given {@code stop} character or the end is reached.
+   * If the {@code stop} character was reached, this scanner will point to the next character after {@code stop} when
+   * this method returns.
+   *
+   * @param stop is the character to read until.
+   * @return {@code true} if the first occurrence of the given {@code stop} character has been passed, {@code false} if
+   *         there is no such character.
+   */
+  boolean skipUntil(char stop);
+
+  /**
+   * This method reads all {@link #next() next characters} until the given {@code stop} character or the end of the
+   * string to parse is reached. In advance to {@link #skipUntil(char)}, this method will read over the {@code stop}
+   * character if it is escaped with the given {@code escape} character.
+   *
+   * @param stop is the character to read until.
+   * @param escape is the character used to escape the stop character (e.g. '\').
+   * @return {@code true} if the first occurrence of the given {@code stop} character has been passed, {@code false} if
+   *         there is no such character.
+   */
+  boolean skipUntil(char stop, char escape);
+
+  /**
    * This method skips the number of {@link #next() next characters} given by {@code count}.
    *
    * @param count is the number of characters to skip. You may use {@link Integer#MAX_VALUE} to read until the end of
@@ -800,122 +1105,6 @@ public interface CharStreamScanner extends TextFormatProcessor {
     skipWhile(filter, max);
     return peek();
   }
-
-  /**
-   * @return a {@link String} with the data until the end of the current line or the end of the data. Will be
-   *         {@code null} if the end has already been reached and {@link #hasNext()} returns {@code false}.
-   */
-  default String readLine() {
-
-    return readLine(false);
-  }
-
-  /**
-   * @param trim - {@code true} if the result should be {@link String#trim() trimmed}, {@code false} otherwise.
-   * @return a {@link String} with the data until the end of the current line ({@link String#trim() trimmed} if
-   *         {@code trim} is {@code true}) or the end of the data. Will be {@code null} if the end has already been
-   *         reached and {@link #hasNext()} returns {@code false}.
-   */
-  String readLine(boolean trim);
-
-  /**
-   * Reads and parses a Java {@link String} literal value according to JLS 3.10.6. <br>
-   * As a complex example for the input "Hi \"\176\477\579\u2022\uuuuu2211\"\n" this scanner would return the
-   * {@link String} output {@code Hi "~'7/9•∑"} followed by a newline character.
-   *
-   * @return the parsed Java {@link String} literal value or {@code null} if not pointing to a {@link String} literal.
-   */
-  default String readJavaStringLiteral() {
-
-    return readJavaStringLiteral(TextFormatMessageType.ERROR);
-  }
-
-  /**
-   * Reads and parses a Java {@link String} literal value according to JLS 3.10.6. <br>
-   * As a complex example for the input "Hi \"\176\477\579\u2022\uuuuu2211\"\n" this scanner would return the
-   * {@link String} output {@code Hi "~'7/9•∑"} followed by a newline character.
-   *
-   * @param severity the {@link TextFormatMessageType} to use to report invalid escape sequences or missing terminating
-   *        quotation.
-   * @return the parsed Java {@link String} literal value or {@code null} if not pointing to a {@link String} literal.
-   */
-  String readJavaStringLiteral(TextFormatMessageType severity);
-
-  /**
-   * Reads and parses a Java {@link Character} literal value according to JLS 3.10.6. <br>
-   * Examples are given in the following table:
-   * <table border="1">
-   * <tr>
-   * <th>literal</th>
-   * <th>result</th>
-   * <th>comment</th>
-   * </tr>
-   * <tr>
-   * <td>{@code 'a'}</td>
-   * <td>a</td>
-   * <td>regular char</td>
-   * </tr>
-   * <tr>
-   * <td>{@code '\''}</td>
-   * <td>'</td>
-   * <td>escaped char</td>
-   * </tr>
-   * <tr>
-   * <td>{@code '\176'}</td>
-   * <td>~</td>
-   * <td>escaped octal representation</td>
-   * </tr>
-   * <tr>
-   * <td>{@code '\u2022'}</td>
-   * <td>•</td>
-   * <td>escaped unicode representation</td>
-   * </tr>
-   * </table>
-   *
-   * @return the parsed Java {@link String} literal value or {@code null} if not pointing to a {@link String} literal.
-   */
-  default Character readJavaCharLiteral() {
-
-    return readJavaCharLiteral(TextFormatMessageType.ERROR);
-  }
-
-  /**
-   * Reads and parses a Java {@link Character} literal value according to JLS 3.10.6. <br>
-   * Examples are given in the following table:
-   * <table border="1">
-   * <tr>
-   * <th>literal</th>
-   * <th>result</th>
-   * <th>comment</th>
-   * </tr>
-   * <tr>
-   * <td>{@code 'a'}</td>
-   * <td>a</td>
-   * <td>regular char</td>
-   * </tr>
-   * <tr>
-   * <td>{@code '\''}</td>
-   * <td>'</td>
-   * <td>escaped char</td>
-   * </tr>
-   * <tr>
-   * <td>{@code '\176'}</td>
-   * <td>~</td>
-   * <td>escaped octal representation</td>
-   * </tr>
-   * <tr>
-   * <td>{@code '\u2022'}</td>
-   * <td>•</td>
-   * <td>escaped unicode representation</td>
-   * </tr>
-   * </table>
-   *
-   * @param severity the {@link TextFormatMessageType} to use to report invalid escape sequences or missing terminating
-   *        quotation.
-   * @return the parsed Java {@link Character} literal value or {@code null} if not pointing to a {@link Character}
-   *         literal.
-   */
-  Character readJavaCharLiteral(TextFormatMessageType severity);
 
   /**
    * @return the {@link String} with the characters that have already been parsed but are still available in the

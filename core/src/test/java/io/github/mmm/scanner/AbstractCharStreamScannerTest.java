@@ -371,23 +371,23 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testReadLong() {
 
-    // given
-    String string = "654321-1234567890123456789";
-    // when
-    CharStreamScanner scanner = scanner(string);
-    long value = scanner.readLong(19);
-    // then
-    assertThat(value).isEqualTo(654321);
-    assertThat(scanner.next()).isEqualTo('-');
-    // and when
-    value = scanner.readLong(19);
-    // then
-    assertThat(value).isEqualTo(1234567890123456789l);
-    assertThat(scanner.hasNext()).isFalse();
+    new NumberScannerLong(s -> scanner(s, 2)).test();
+  }
+
+  @Test
+  public void testReadInteger() {
+
+    new NumberScannerInteger(s -> scanner(s, 2)).test();
   }
 
   @Test
   public void testReadDouble() {
+
+    new NumberScannerDouble(s -> scanner(s, 9)).test();
+  }
+
+  @Test
+  public void testReadDoubles() {
 
     // given
     String string = "123456789-987654321+0.123e-10xyz";
@@ -400,6 +400,48 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     assertThat(scanner.readDouble()).isNull();
     // scanner.require("xyz");
     assertThat(scanner.read(Integer.MAX_VALUE)).isEqualTo("xyz");
+  }
+
+  @Test
+  public void testReadDoubleNonNumbers() {
+
+    checkDouble("NaN");
+    checkDouble("+NaN");
+    checkDouble("-NaN");
+    checkDouble("Infinity");
+    checkDouble("+Infinity");
+    checkDouble("-Infinity");
+    checkDouble("NAN");
+  }
+
+  private Double checkDouble(String number) {
+
+    // when java.lang
+    Double javaD = null;
+    NumberFormatException javaE = null;
+    try {
+      javaD = Double.valueOf(number);
+    } catch (NumberFormatException e) {
+      javaE = e;
+    }
+    // and when mmm scanner
+    Double scannerD = null;
+    NumberFormatException scannerE = null;
+    try {
+      CharStreamScanner scanner = scanner(number, 9);
+      scannerD = scanner.readDouble();
+    } catch (NumberFormatException e) {
+      scannerE = e;
+    }
+    // then
+    assertThat(scannerD).isEqualTo(javaD);
+    if (javaD == null) {
+      assertThat(javaE).isNotNull();
+      if (scannerE != null) {
+        assertThat(javaE).hasMessage(scannerE.getMessage());
+      }
+    }
+    return scannerD;
   }
 
   @Test
@@ -512,15 +554,15 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     // when
     CharStreamScanner scanner = scanner(string, true);
     // then
-    assertThat(scanner.expectStrict("Hello WorlD", false)).isFalse();
+    assertThat(scanner.expect("Hello WorlD", false)).isFalse();
     assertThat(scanner.getPosition()).isEqualTo(0);
     assertThat(scanner.getColumn()).isEqualTo(1);
     assertThat(scanner.getLine()).isEqualTo(1);
-    assertThat(scanner.expectStrict("Hello ", false)).isTrue();
+    assertThat(scanner.expect("Hello ", false)).isTrue();
     assertThat(scanner.getPosition()).isEqualTo(6);
     assertThat(scanner.getColumn()).isEqualTo(7);
     assertThat(scanner.getLine()).isEqualTo(1);
-    assertThat(scanner.expectStrict("WorlD!", true)).isTrue();
+    assertThat(scanner.expect("WorlD!", true)).isTrue();
     assertThat(scanner.getPosition()).isEqualTo(12);
     assertThat(scanner.getColumn()).isEqualTo(13);
     assertThat(scanner.getLine()).isEqualTo(1);

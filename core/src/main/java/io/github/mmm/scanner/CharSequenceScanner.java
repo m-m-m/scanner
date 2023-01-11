@@ -332,14 +332,14 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
   }
 
   @Override
-  public boolean expectStrict(String expected, boolean ignoreCase, boolean lookahead) {
+  public boolean expect(String expected, boolean ignoreCase, boolean lookahead, int off) {
 
     int len = expected.length();
-    int newPos = this.offset;
+    int newPos = this.offset + off;
+    if (newPos + len > this.limit) {
+      return false;
+    }
     for (int i = 0; i < len; i++) {
-      if (newPos >= this.limit) {
-        return false;
-      }
       char c = this.buffer[newPos];
       char exp = expected.charAt(i);
       if (c != exp) {
@@ -395,7 +395,7 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
   @Override
   public void require(String expected, boolean ignoreCase) {
 
-    if (!expectStrict(expected, ignoreCase)) {
+    if (!expect(expected, ignoreCase)) {
       throw new IllegalStateException("Expecting '" + expected + "' but found: " + getTail(expected.length()));
     }
   }

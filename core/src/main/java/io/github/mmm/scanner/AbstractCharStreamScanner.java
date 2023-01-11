@@ -24,6 +24,10 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
 
   static final Logger LOG = LoggerFactory.getLogger(AbstractCharStreamScanner.class);
 
+  private static final String NAN = "NaN";
+
+  private static final String INFINITY = "Infinity";
+
   private static final CharFilter FILTER_SINGLE_QUOTE = (c) -> (c == '\'');
 
   private final TextFormatMessageHandler messageHandler;
@@ -776,6 +780,100 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
 
   }
 
+  @Override
+  public Number readJavaNumberLiteral() {
+
+    String decimal = readDecimal();
+    if (decimal == null) {
+      return null;
+    }
+    Number number = null;
+    char c = peek();
+    if ((c == 'l') || (c == 'L')) {
+      number = parseLong(decimal);
+    } else if ((c == 'f') || (c == 'F')) {
+      number = Float.valueOf(decimal);
+    } else if ((c == 'd') || (c == 'D')) {
+      number = Double.valueOf(decimal);
+    }
+    if (number == null) {
+      if ((decimal.indexOf('.') >= 0) || (decimal.indexOf('e') >= 0)) {
+        number = Double.valueOf(decimal);
+      } else {
+        number = parseInteger(decimal);
+      }
+    } else {
+      next();
+    }
+    return number;
+  }
+
+  private Long parseLong(String number) {
+
+    int radix = 10;
+    int len = number.length();
+    int i = 0;
+    char sign = 0;
+    char c = number.charAt(i++);
+    if (isNumberSign(c)) {
+      sign = c;
+      c = number.charAt(i++);
+    }
+    if (c == '0') {
+      if (i < len) {
+        c = number.charAt(i);
+        if (isRadix16(c)) {
+          radix = 16;
+          i++;
+        } else if (isRadix2(c)) {
+          radix = 2;
+          i++;
+        } else {
+          assert (c >= '0') && (c <= '7');
+          radix = 8;
+        }
+        number = number.substring(i);
+        if (sign != 0) {
+          number = sign + number;
+        }
+      }
+    }
+    return Long.valueOf(Long.parseLong(number, radix));
+  }
+
+  private Integer parseInteger(String number) {
+
+    int radix = 10;
+    int len = number.length();
+    int i = 0;
+    char sign = 0;
+    char c = number.charAt(i++);
+    if (isNumberSign(c)) {
+      sign = c;
+      c = number.charAt(i++);
+    }
+    if (c == '0') {
+      if (i < len) {
+        c = number.charAt(i);
+        if (isRadix16(c)) {
+          radix = 16;
+          i++;
+        } else if (isRadix2(c)) {
+          radix = 2;
+          i++;
+        } else {
+          assert (c >= '0') && (c <= '7');
+          radix = 8;
+        }
+        number = number.substring(i);
+        if (sign != 0) {
+          number = sign + number;
+        }
+      }
+    }
+    return Integer.valueOf(Integer.parseInt(number, radix));
+  }
+
   private StringBuilder createUnicodeLiteralError(char c) {
 
     StringBuilder error;
@@ -910,16 +1008,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     int result = -1;
     if (hasNext()) {
       char c = this.buffer[this.offset];
-      int value = -1;
-      if ((c >= '0') && (c <= '9')) {
-        value = c - '0';
-      }
-      if ((c >= 'a') && (c <= 'z')) {
-        value = (c - 'a') + 10;
-      }
-      if ((c >= 'A') && (c <= 'Z')) {
-        value = (c - 'A') + 10;
-      }
+      int value = Character.digit(c, radix);
       if ((value >= 0) && (value < radix)) {
         result = value;
         handleChar(c);
@@ -930,31 +1019,44 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
   }
 
   @Override
-  public String readDecimal() {
+  public String readNumeric(boolean noSign, boolean decimal, boolean customRadix, boolean nonNumbers) {
 
     StringBuilder builder = builder(null);
-    boolean start = true;
-    boolean noExponent = false;
-    boolean noDot = false;
+    boolean noExponent = !decimal;
+    boolean noDot = !decimal;
+    int radix = 10;
+    int rdx = radix;
     int i = 0;
     char c = 0;
-    char c0 = 0; // previous character
+    char c0; // previous character
     while (true) {
       c0 = c;
       c = peek(i++);
-      if ((c >= '0') && (c <= '9')) {
+      if (Character.digit(c, rdx) >= 0) {
         if (i == 1) {
           builder.append(next());
         } else {
           read(i, builder);
         }
         i = 0;
-      } else if ((c == '+') || (c == '-')) {
-        // sign (+/-) is only allowed at the beginning or directly after e/E for exponent
-        if (!start && (c0 != 'e') && (c0 != 'E')) {
+        if (customRadix) {
+          char cr = peek();
+          radix = 8;
+          if (isRadix16(cr)) {
+            radix = 16;
+            rdx = 16;
+            i++;
+          } else if (isRadix2(cr)) {
+            radix = 2;
+            i++;
+          }
+        }
+      } else if (isNumberSign(c)) {
+        // sign (+/-) is only allowed at the beginning (if noSign is false) or directly after e/E for exponent
+        if (((c0 != 0) || noSign) && !isNumberExponent(c0, radix)) {
           break;
         }
-      } else if ((c == 'e') || (c == 'E')) {
+      } else if (isNumberExponent(c, radix)) {
         if (noExponent || (builder.length() == 0)) {
           break;
         } else {
@@ -968,9 +1070,23 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
           noDot = true;
         }
       } else {
+        i--;
+        if ((i == 0) || ((i == 1) && isNumberSign(c0))) {
+          String nonNumber = null;
+          if ((c == 'I') && expect(INFINITY, false, false, i)) {
+            nonNumber = INFINITY;
+          } else if ((c == 'N') && expect(NAN, false, false, i)) {
+            nonNumber = NAN;
+          }
+          if (nonNumber != null) {
+            if (i == 1) {
+              nonNumber = c0 + nonNumber;
+            }
+            return nonNumber;
+          }
+        }
         break;
       }
-      start = false;
     }
     if (builder.length() == 0) {
       return null;
@@ -978,8 +1094,151 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     return builder.toString();
   }
 
+  private boolean isNumberExponent(char c, int radix) {
+
+    if (radix == 16) {
+      return (c == 'p') || (c == 'P');
+    }
+    return (c == 'e') || (c == 'E');
+  }
+
   @Override
-  public long readLong(int maxDigits) throws NumberFormatException {
+  public Long readLong(NumericRadixMode radixMode, boolean noSign, long max) throws NumberFormatException {
+
+    long value = 0;
+    char c = peek();
+    int skipCount = 1;
+    char sign = 0;
+    char radixSymbol = 0;
+    long min = -max;
+    long minMul = min;
+    if (isNumberSign(c)) {
+      sign = c;
+      if (c == '-') {
+        if (max == Integer.MAX_VALUE) {
+          min = Integer.MIN_VALUE;
+        } else if (max == Long.MAX_VALUE) {
+          min = Long.MIN_VALUE;
+        }
+      }
+      c = peek(1);
+      skipCount++;
+    }
+    int radix = 10;
+    int rdx = 10;
+    boolean firstDigit = true;
+    boolean todo = true;
+    while (todo) {
+      int digit;
+      if ((c == '0') && firstDigit) { // radix
+        digit = 0;
+        if (sign != 0) {
+          next(); // consume sign as we have found a reasonable number
+          skipCount--;
+        }
+        c = peek(1); // peek character after '0'
+        int r = 10;
+        if (isRadix16(c)) {
+          radixSymbol = c;
+          r = 16;
+          skipCount++;
+        } else if (isRadix2(c)) {
+          radixSymbol = c;
+          r = 2;
+          skipCount++;
+        } else {
+          if (isDigit(c)) { // logically 0-7, see explanation in comment below
+            radixSymbol = '0';
+            r = 8;
+          }
+        }
+        radix = radixMode.acceptRadix(r);
+        if (radix != r) {
+          skipCount = 1; // revert increasing skipCount and consuming x/b for radix as not accepted.
+        } else if (radix == 16) {
+          // we use rdx to parse digits and still want to read and consume digits for NumberFormatException (NFE)
+          // else we might read "0b1012;078" as "0b101" and leave "2;078" remaining while we want NFE for "0b1012"
+          rdx = radix;
+        }
+      } else {
+        digit = Character.digit(c, rdx);
+      }
+      if (digit >= 0) {
+        skip(skipCount);
+        skipCount = 1;
+        if ((digit >= radix) || (value < minMul)) {
+          throw numberFormatException(value, sign, radixSymbol, radix, c);
+        }
+        value = value * radix;
+        if (value < min + digit) {
+          value = value / radix;
+          throw numberFormatException(value, sign, radixSymbol, radix, c);
+        }
+        value = value - digit;
+        c = peek();
+      } else {
+        todo = false;
+      }
+      if (firstDigit) {
+        firstDigit = false;
+        minMul = min / radix;
+      }
+    }
+    if (sign != '-') {
+      value = -value;
+    }
+    return Long.valueOf(value);
+  }
+
+  private boolean isRadix2(char c) {
+
+    return (c == 'b') || (c == 'B');
+  }
+
+  private boolean isRadix16(char c) {
+
+    return (c == 'x') || (c == 'X');
+  }
+
+  private boolean isDigit(char c) {
+
+    return (c >= '0') && (c <= '9');
+  }
+
+  private boolean isNumberSign(char c) {
+
+    return (c == '+') || (c == '-');
+  }
+
+  private NumberFormatException numberFormatException(long value, char sign, char radixSymbol, int radix, char digit) {
+
+    StringBuilder error = new StringBuilder("For input string: \"");
+    if (sign == '+') {
+      error.append(sign);
+    }
+    if (sign != '-') {
+      value = -value;
+    }
+    if (radixSymbol != 0) {
+      error.append('0');
+      if (radixSymbol != '0') {
+        error.append(radixSymbol);
+      }
+    }
+    error.append(Long.toString(value, radix));
+    error.append(digit);
+    String digits = readWhile(c -> Character.digit(c, radix) >= 0);
+    error.append(digits);
+    error.append('"');
+    if (radix != 10) {
+      error.append(" under radix ");
+      error.append(radix);
+    }
+    throw new NumberFormatException(error.toString());
+  }
+
+  @Override
+  public long readUnsignedLong(int maxDigits) throws NumberFormatException {
 
     if (maxDigits <= 0) {
       throw new IllegalArgumentException(Integer.toString(maxDigits));
@@ -998,7 +1257,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
       char c = 0;
       while (this.offset < end) {
         c = this.buffer[this.offset];
-        if ((c < '0') || (c > '9')) {
+        if (!isDigit(c)) {
           break;
         }
         this.offset++;
@@ -1029,10 +1288,13 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     while (remain > 0) {
       int len = this.limit - this.offset;
       if (len >= remain) {
-        this.offset += remain;
+        setOffset(this.offset + remain);
         return count;
+      } else {
+        setOffset(this.limit);
+        skipped = skipped + len;
+        remain = remain - len;
       }
-      skipped = skipped + len;
       if (!fill()) {
         break;
       }
