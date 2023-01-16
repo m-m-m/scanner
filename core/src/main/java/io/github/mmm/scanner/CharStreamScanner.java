@@ -5,6 +5,9 @@ package io.github.mmm.scanner;
 import io.github.mmm.base.filter.CharFilter;
 import io.github.mmm.base.text.TextFormatMessageType;
 import io.github.mmm.base.text.TextFormatProcessor;
+import io.github.mmm.scanner.number.CharScannerNumberParser;
+import io.github.mmm.scanner.number.CharScannerRadixHandler;
+import io.github.mmm.scanner.number.CharScannerRadixMode;
 
 /**
  * This is the interface for a scanner that can be used to parse a stream or sequence of characters.
@@ -377,29 +380,12 @@ public interface CharStreamScanner extends TextFormatProcessor {
   }
 
   /**
-   * Consumes the characters of a decimal number (double, float, BigDecimal, etc.).
+   * Generic way to read and parse any kind of {@link Number}.
    *
-   * @return the decimal number as {@link String} or {@code null} if no decimal value was found.
+   * @param numberParser the {@link CharScannerNumberParser}. Can decide if sign, digits, radix, exponent, or even
+   *        specials are
    */
-  default String readDecimal() {
-
-    return readNumeric(false, true, false, true);
-  }
-
-  /**
-   * Consumes the characters of a {@link Number} (double, float, BigDecimal, etc.).
-   *
-   * @param noSign - {@code true} if no initial sign ('+' or '-') is accepted, {@code false} otherwise (read sign if
-   *        present).
-   * @param decimal - {@code true} to accept decimal numbers with decimal dot and scientific notation (1.2e-3),
-   *        {@code false} otherwise (integer only).
-   * @param customRadix - {@code true} to allow custom radix (e.g. "0xFF" or "0b1101"), {@code false} otherwise.
-   *        Typically custom radix is not used for decimal but only for integer numbers.
-   * @param nonNumbers - {@code true} to accept also {@link Double#NaN NaN} and (-){@link Double#POSITIVE_INFINITY
-   *        Infinity}, {@code false} otherwise.
-   * @return the decimal number as {@link String} or {@code null} if no decimal value was found.
-   */
-  String readNumeric(boolean noSign, boolean decimal, boolean customRadix, boolean nonNumbers);
+  void readNumber(CharScannerNumberParser numberParser);
 
   /**
    * This method reads the double value (decimal number) starting at the current position by reading as many matching
@@ -407,31 +393,23 @@ public interface CharStreamScanner extends TextFormatProcessor {
    *
    * @return the parsed {@code double} number or {@code null} if the current current position does not point to a
    *         number.
+   * @throws NumberFormatException if the number at the current position could not be parsed.
    */
-  default Double readDouble() {
+  default Double readDouble() throws NumberFormatException {
 
-    String number = readDecimal();
-    if (number == null) {
-      return null;
-    }
-    return Double.valueOf(number);
+    return readDouble(CharScannerRadixMode.ONLY_10);
   }
 
   /**
    * This method reads the double value (decimal number) starting at the current position by reading as many matching
    * characters as available and returns its {@link Double#parseDouble(String) parsed} value. <br>
    *
+   * @param radixMode the {@link CharScannerRadixHandler} - e.g. {@link CharScannerRadixMode#ALL}.
    * @return the parsed {@code double} number or {@code null} if the current current position does not point to a
    *         number.
+   * @throws NumberFormatException if the number at the current position could not be parsed.
    */
-  default Double readDouble(boolean customRadix) {
-
-    String number = readNumeric(false, true, customRadix, true);
-    if (number == null) {
-      return null;
-    }
-    return Double.valueOf(number);
-  }
+  Double readDouble(CharScannerRadixHandler radixMode) throws NumberFormatException;
 
   /**
    * This method reads a {@link Float} value from the current position {@link #next() consuming} as many matching
@@ -439,49 +417,41 @@ public interface CharStreamScanner extends TextFormatProcessor {
    *
    * @return the parsed {@link Float} value or {@code null} if the current current position does not point to a
    *         {@link Float} number.
-   * @throws NumberFormatException if the current current position does NOT point to a number.
+   * @throws NumberFormatException if the number at the current position could not be parsed.
    */
   default Float readFloat() throws NumberFormatException {
 
-    String number = readDecimal();
-    if (number == null) {
-      return null;
-    }
-    return Float.valueOf(number);
+    return readFloat(CharScannerRadixMode.ONLY_10);
   }
 
   /**
-   * @return the consumed {@link Long} value or {@code null} if no such value was present and the {@link #getPosition()
+   * This method reads a {@link Float} value from the current position {@link #next() consuming} as many matching
+   * characters as available.
+   *
+   * @param radixMode the {@link CharScannerRadixHandler} - e.g. {@link CharScannerRadixMode#ALL}.
+   * @return the parsed {@link Float} value or {@code null} if the current current position does not point to a
+   *         {@link Float} number.
+   * @throws NumberFormatException if the number at the current position could not be parsed.
+   */
+  Float readFloat(CharScannerRadixHandler radixMode) throws NumberFormatException;
+
+  /**
+   * @return the consumed {@link Long} value or {@code null} if no number was present and the {@link #getPosition()
    *         position} remains unchanged.
-   * @throws NumberFormatException if the current current position does not point to a {@link Long} value.
+   * @throws NumberFormatException if the current current position points to a number that is not a {@link Long} value.
    */
   default Long readLong() throws NumberFormatException {
 
-    return readLong(NumericRadixMode.ONLY_10, false, Long.MAX_VALUE);
+    return readLong(CharScannerRadixMode.ONLY_10);
   }
 
   /**
-   * @param radixMode the {@link NumericRadixMode}.
-   * @param noSign - {@code true} if no sign ('+' or '-')is accepted, {@code false} otherwise (read sign if present).
-   * @param max the maximum allowed number (e.g. {@link Integer#MAX_VALUE} to parse an {@link Integer} value).
+   * @param radixMode the {@link CharScannerRadixHandler} - e.g. {@link CharScannerRadixMode#ALL}.
    * @return the consumed {@link Long} value or {@code null} if no such value was present and the {@link #getPosition()
    *         position} remains unchanged.
-   * @throws NumberFormatException if the current current position does not point to a {@link Long} value.
+   * @throws NumberFormatException if the current current position points to a number that is not a {@link Long} value.
    */
-  default Long readLong(NumericRadixMode radixMode, boolean noSign) throws NumberFormatException {
-
-    return readLong(radixMode, noSign, Long.MAX_VALUE);
-  }
-
-  /**
-   * @param radixMode the {@link NumericRadixMode}.
-   * @param noSign - {@code true} if no sign ('+' or '-')is accepted, {@code false} otherwise (read sign if present).
-   * @param max the maximum allowed number (e.g. {@link Integer#MAX_VALUE} to parse an {@link Integer} value).
-   * @return the consumed {@link Long} value or {@code null} if no such value was present and the {@link #getPosition()
-   *         position} remains unchanged.
-   * @throws NumberFormatException if the current current position does not point to a {@link Long} value.
-   */
-  Long readLong(NumericRadixMode radixMode, boolean noSign, long max) throws NumberFormatException;
+  Long readLong(CharScannerRadixHandler radixMode);
 
   /**
    * @return the consumed {@link Integer} value or {@code null} if no such value was present and the
@@ -490,37 +460,17 @@ public interface CharStreamScanner extends TextFormatProcessor {
    */
   default Integer readInteger() throws NumberFormatException {
 
-    return readInteger(NumericRadixMode.ONLY_10, false);
+    return readInteger(CharScannerRadixMode.ONLY_10);
   }
 
   /**
-   * @param radixMode the {@link NumericRadixMode}.
+   * @param radixMode the {@link CharScannerRadixHandler} - e.g. {@link CharScannerRadixMode#ALL}.
    * @param noSign - {@code true} if no sign ('+' or '-')is accepted, {@code false} otherwise (read sign if present).
    * @return the consumed {@link Integer} value or {@code null} if no such value was present and the
    *         {@link #getPosition() position} remains unchanged.
    * @throws NumberFormatException if the current current position does not point to a {@link Long} value.
    */
-  default Integer readInteger(NumericRadixMode radixMode, boolean noSign) throws NumberFormatException {
-
-    return readInteger(radixMode, noSign, Integer.MAX_VALUE);
-  }
-
-  /**
-   * @param radixMode the {@link NumericRadixMode}.
-   * @param noSign - {@code true} if no sign ('+' or '-')is accepted, {@code false} otherwise (read sign if present).
-   * @param max the maximum allowed number (e.g. {@link Integer#MAX_VALUE} to parse an {@link Integer} value).
-   * @return the consumed {@link Integer} value or {@code null} if no such value was present and the
-   *         {@link #getPosition() position} remains unchanged.
-   * @throws NumberFormatException if the current current position does not point to a {@link Long} value.
-   */
-  default Integer readInteger(NumericRadixMode radixMode, boolean noSign, int max) throws NumberFormatException {
-
-    Long value = readLong(radixMode, noSign, max);
-    if (value == null) {
-      return null;
-    }
-    return Integer.valueOf((int) value.longValue());
-  }
+  Integer readInteger(CharScannerRadixHandler radixMode) throws NumberFormatException;
 
   /**
    * Reads a Java {@link Number} literal (e.g. "1L" or "1.3F").
@@ -564,7 +514,7 @@ public interface CharStreamScanner extends TextFormatProcessor {
    * @param maxDigits is the maximum number of digits that will be read. The value has to be positive (greater than
    *        zero). Should not be greater than {@code 19} as this will exceed the range of {@code long}.
    * @return the parsed number.
-   * @throws NumberFormatException if the current current position does NOT point to a number.
+   * @throws NumberFormatException if the number at the current position could not be parsed.
    */
   long readUnsignedLong(int maxDigits) throws NumberFormatException;
 

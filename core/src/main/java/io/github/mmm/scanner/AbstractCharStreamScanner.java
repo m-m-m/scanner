@@ -10,10 +10,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.github.mmm.base.filter.CharFilter;
+import io.github.mmm.base.number.NumberType;
 import io.github.mmm.base.text.CaseHelper;
 import io.github.mmm.base.text.TextFormatMessage;
 import io.github.mmm.base.text.TextFormatMessageHandler;
 import io.github.mmm.base.text.TextFormatMessageType;
+import io.github.mmm.scanner.number.CharScannerNumberParser;
+import io.github.mmm.scanner.number.CharScannerNumberParserLang;
+import io.github.mmm.scanner.number.CharScannerNumberParserString;
+import io.github.mmm.scanner.number.CharScannerRadixHandler;
+import io.github.mmm.scanner.number.CharScannerRadixMode;
 
 /**
  * Abstract implementation of {@link CharStreamScanner}.<br>
@@ -23,10 +29,6 @@ import io.github.mmm.base.text.TextFormatMessageType;
 public abstract class AbstractCharStreamScanner implements CharStreamScanner {
 
   static final Logger LOG = LoggerFactory.getLogger(AbstractCharStreamScanner.class);
-
-  private static final String NAN = "NaN";
-
-  private static final String INFINITY = "Infinity";
 
   private static final CharFilter FILTER_SINGLE_QUOTE = (c) -> (c == '\'');
 
@@ -783,7 +785,10 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
   @Override
   public Number readJavaNumberLiteral() {
 
-    String decimal = readDecimal();
+    CharScannerNumberParserString numberParser = new CharScannerNumberParserString(CharScannerRadixMode.ALL, true, true,
+        "_", true);
+    readNumber(numberParser);
+    String decimal = numberParser.toString();
     if (decimal == null) {
       return null;
     }
@@ -1018,82 +1023,6 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     return result;
   }
 
-  @Override
-  public String readNumeric(boolean noSign, boolean decimal, boolean customRadix, boolean nonNumbers) {
-
-    StringBuilder builder = builder(null);
-    boolean noExponent = !decimal;
-    boolean noDot = !decimal;
-    int radix = 10;
-    int rdx = radix;
-    int i = 0;
-    char c = 0;
-    char c0; // previous character
-    while (true) {
-      c0 = c;
-      c = peek(i++);
-      if (Character.digit(c, rdx) >= 0) {
-        if (i == 1) {
-          builder.append(next());
-        } else {
-          read(i, builder);
-        }
-        i = 0;
-        if (customRadix) {
-          char cr = peek();
-          radix = 8;
-          if (isRadix16(cr)) {
-            radix = 16;
-            rdx = 16;
-            i++;
-          } else if (isRadix2(cr)) {
-            radix = 2;
-            i++;
-          }
-        }
-      } else if (isNumberSign(c)) {
-        // sign (+/-) is only allowed at the beginning (if noSign is false) or directly after e/E for exponent
-        if (((c0 != 0) || noSign) && !isNumberExponent(c0, radix)) {
-          break;
-        }
-      } else if (isNumberExponent(c, radix)) {
-        if (noExponent || (builder.length() == 0)) {
-          break;
-        } else {
-          noExponent = true;
-          noDot = true;
-        }
-      } else if (c == '.') {
-        if (noDot) {
-          break;
-        } else {
-          noDot = true;
-        }
-      } else {
-        i--;
-        if ((i == 0) || ((i == 1) && isNumberSign(c0))) {
-          String nonNumber = null;
-          if ((c == 'I') && expect(INFINITY, false, false, i)) {
-            nonNumber = INFINITY;
-          } else if ((c == 'N') && expect(NAN, false, false, i)) {
-            nonNumber = NAN;
-          }
-          if (nonNumber != null) {
-            if (i == 1) {
-              nonNumber = c0 + nonNumber;
-            }
-            return nonNumber;
-          }
-        }
-        break;
-      }
-    }
-    if (builder.length() == 0) {
-      return null;
-    }
-    return builder.toString();
-  }
-
   private boolean isNumberExponent(char c, int radix) {
 
     if (radix == 16) {
@@ -1103,91 +1032,104 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
   }
 
   @Override
-  public Long readLong(NumericRadixMode radixMode, boolean noSign, long max) throws NumberFormatException {
+  public void readNumber(CharScannerNumberParser numberParser) {
 
-    long value = 0;
-    char c = peek();
     int skipCount = 1;
-    char sign = 0;
-    char radixSymbol = 0;
-    long min = -max;
-    long minMul = min;
-    if (isNumberSign(c)) {
-      sign = c;
-      if (c == '-') {
-        if (max == Integer.MAX_VALUE) {
-          min = Integer.MIN_VALUE;
-        } else if (max == Long.MAX_VALUE) {
-          min = Long.MIN_VALUE;
-        }
-      }
-      c = peek(1);
+    char c = peek();
+    if (isNumberSign(c) && numberParser.sign(c)) {
+      c = peek(skipCount);
       skipCount++;
     }
     int radix = 10;
-    int rdx = 10;
-    boolean firstDigit = true;
+    if (c == '0') { // radix?
+      if (skipCount == 2) {
+        next(); // consume sign as we have found a reasonable number
+        skipCount--;
+      }
+      assert (skipCount == 1);
+      char radixChar = peek(skipCount); // peek character after '0'
+      char rc = radixChar;
+      int r = 10;
+      if (isRadix16(radixChar)) {
+        r = 16;
+      } else if (isRadix2(radixChar)) {
+        r = 2;
+      } else if (isDigit(radixChar)) { // logically 0-7, see explanation in comment below
+        rc = '0';
+        r = 8;
+      } else {
+        r = 0;
+      }
+      radix = numberParser.radix(r, rc);
+      if (radix > 0) {
+        if (r == 8) {
+          next();
+          c = radixChar;
+        } else {
+          skip(2);
+          c = peek();
+        }
+      }
+      if (radix < 10) {
+        // we use at least radix 10 to to read and consume digits for NumberFormatException (NFE)
+        // else we might read "0b1012;078" as "0b101" and leave "2;078" remaining while we want NFE for "0b1012"
+        // the actual radix is handled by numberParser
+        radix = 10;
+      }
+    }
     boolean todo = true;
     while (todo) {
-      int digit;
-      if ((c == '0') && firstDigit) { // radix
-        digit = 0;
-        if (sign != 0) {
-          next(); // consume sign as we have found a reasonable number
-          skipCount--;
+      boolean next = false;
+      boolean peek = true;
+      int digit = Character.digit(c, radix);
+      if (digit >= 0) {
+        next = numberParser.digit(digit, c);
+      } else if (c == '.') {
+        next = numberParser.dot();
+        if (!next) {
+          todo = false;
         }
-        c = peek(1); // peek character after '0'
-        int r = 10;
-        if (isRadix16(c)) {
-          radixSymbol = c;
-          r = 16;
-          skipCount++;
-        } else if (isRadix2(c)) {
-          radixSymbol = c;
-          r = 2;
+      } else if (isNumberExponent(c, radix)) {
+        char e = c;
+        c = peek(skipCount);
+        char eSign = c;
+        if (isNumberSign(eSign)) {
           skipCount++;
         } else {
-          if (isDigit(c)) { // logically 0-7, see explanation in comment below
-            radixSymbol = '0';
-            r = 8;
+          eSign = 0;
+        }
+        next = numberParser.exponent(e, eSign);
+        if (next && (eSign == 0)) {
+          peek = false;
+        }
+      } else {
+        String special = numberParser.special(c);
+        if (special != null) {
+          if (expect(special, false, false, skipCount - 1)) {
+            skipCount = 0;
+            numberParser.special(special);
+            next = false; // we accept but have already consumed, no next
+          } else {
+            todo = false;
           }
+        } else {
+          todo = false;
         }
-        radix = radixMode.acceptRadix(r);
-        if (radix != r) {
-          skipCount = 1; // revert increasing skipCount and consuming x/b for radix as not accepted.
-        } else if (radix == 16) {
-          // we use rdx to parse digits and still want to read and consume digits for NumberFormatException (NFE)
-          // else we might read "0b1012;078" as "0b101" and leave "2;078" remaining while we want NFE for "0b1012"
-          rdx = radix;
-        }
-      } else {
-        digit = Character.digit(c, rdx);
       }
-      if (digit >= 0) {
-        skip(skipCount);
-        skipCount = 1;
-        if ((digit >= radix) || (value < minMul)) {
-          throw numberFormatException(value, sign, radixSymbol, radix, c);
+      if (next) {
+        if (skipCount > 1) {
+          skip(skipCount);
+          skipCount = 1;
+        } else {
+          next();
         }
-        value = value * radix;
-        if (value < min + digit) {
-          value = value / radix;
-          throw numberFormatException(value, sign, radixSymbol, radix, c);
-        }
-        value = value - digit;
+      }
+      if (peek && todo) {
         c = peek();
-      } else {
-        todo = false;
-      }
-      if (firstDigit) {
-        firstDigit = false;
-        minMul = min / radix;
+        todo = (c != 0);
       }
     }
-    if (sign != '-') {
-      value = -value;
-    }
-    return Long.valueOf(value);
+
   }
 
   private boolean isRadix2(char c) {
@@ -1210,31 +1152,36 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     return (c == '+') || (c == '-');
   }
 
-  private NumberFormatException numberFormatException(long value, char sign, char radixSymbol, int radix, char digit) {
+  @Override
+  public Double readDouble(CharScannerRadixHandler radixMode) {
 
-    StringBuilder error = new StringBuilder("For input string: \"");
-    if (sign == '+') {
-      error.append(sign);
-    }
-    if (sign != '-') {
-      value = -value;
-    }
-    if (radixSymbol != 0) {
-      error.append('0');
-      if (radixSymbol != '0') {
-        error.append(radixSymbol);
-      }
-    }
-    error.append(Long.toString(value, radix));
-    error.append(digit);
-    String digits = readWhile(c -> Character.digit(c, radix) >= 0);
-    error.append(digits);
-    error.append('"');
-    if (radix != 10) {
-      error.append(" under radix ");
-      error.append(radix);
-    }
-    throw new NumberFormatException(error.toString());
+    CharScannerNumberParserString numberParser = new CharScannerNumberParserString(radixMode, true, true, "_", true);
+    readNumber(numberParser);
+    return numberParser.asDouble();
+  }
+
+  @Override
+  public Float readFloat(CharScannerRadixHandler radixMode) {
+
+    CharScannerNumberParserString numberParser = new CharScannerNumberParserString(radixMode, true, true, "_", true);
+    readNumber(numberParser);
+    return numberParser.asFloat();
+  }
+
+  @Override
+  public Long readLong(CharScannerRadixHandler radixMode) {
+
+    CharScannerNumberParserLang numberParser = new CharScannerNumberParserLang(radixMode, NumberType.LONG);
+    readNumber(numberParser);
+    return numberParser.asLong();
+  }
+
+  @Override
+  public Integer readInteger(CharScannerRadixHandler radixMode) throws NumberFormatException {
+
+    CharScannerNumberParserLang numberParser = new CharScannerNumberParserLang(radixMode, NumberType.INTEGER);
+    readNumber(numberParser);
+    return numberParser.asInteger();
   }
 
   @Override

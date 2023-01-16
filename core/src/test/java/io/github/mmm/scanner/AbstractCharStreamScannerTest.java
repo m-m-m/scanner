@@ -447,6 +447,12 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testReadFloat() {
 
+    new NumberScannerFloat(s -> scanner(s, 9)).test();
+  }
+
+  @Test
+  public void testReadFloats() {
+
     // given
     String string = "123456789-987654321+0.123e-10xyz";
     // when

@@ -77,4 +77,6 @@ module io.github.mmm.scanner {
   requires org.slf4j;
 
   exports io.github.mmm.scanner;
+
+  exports io.github.mmm.scanner.number;
 }

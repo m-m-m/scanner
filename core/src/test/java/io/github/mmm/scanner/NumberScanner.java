@@ -6,6 +6,8 @@ import java.util.function.Function;
 import org.assertj.core.api.Assertions;
 
 import io.github.mmm.base.number.NumberType;
+import io.github.mmm.scanner.number.CharScannerRadixHandler;
+import io.github.mmm.scanner.number.CharScannerRadixMode;
 
 abstract class NumberScanner<N extends Number & Comparable<N>> extends Assertions {
 
@@ -22,46 +24,18 @@ abstract class NumberScanner<N extends Number & Comparable<N>> extends Assertion
     this.factory = factory;
   }
 
-  N scan(String number, NumericRadixMode radixMode) {
-
-    return scan(number, radixMode, false, null);
-  }
-
-  N scan(String number, NumericRadixMode radixMode, boolean noSign) {
-
-    return scan(number, radixMode, noSign, null);
-  }
-
-  N scan(String number, NumericRadixMode radixMode, boolean noSign, N max) {
+  N scan(String number, CharScannerRadixHandler radixMode) {
 
     CharStreamScanner scanner = this.factory.apply(number);
-    return scan(scanner, radixMode, noSign, max);
+    return scan(scanner, radixMode);
   }
 
   N scan(CharStreamScanner scanner) {
 
-    return scan(scanner, NumericRadixMode.ONLY_10, false, null);
+    return scan(scanner, CharScannerRadixMode.ONLY_10);
   }
 
-  N scan(CharStreamScanner scanner, NumericRadixMode radixMode) {
-
-    return scan(scanner, radixMode, false, null);
-  }
-
-  N scan(CharStreamScanner scanner, NumericRadixMode radixMode, boolean noSign) {
-
-    return scan(scanner, radixMode, noSign, null);
-  }
-
-  N scan(CharStreamScanner scanner, NumericRadixMode radixMode, boolean noSign, N max) {
-
-    if (max == null) {
-      max = this.type.getMax();
-    }
-    return doScan(scanner, radixMode, noSign, max);
-  }
-
-  abstract N doScan(CharStreamScanner scanner, NumericRadixMode radixMode, boolean noSign, N max);
+  abstract N scan(CharStreamScanner scanner, CharScannerRadixHandler radixMode);
 
   public void test() {
 
@@ -81,9 +55,13 @@ abstract class NumberScanner<N extends Number & Comparable<N>> extends Assertion
       assertThat(check("-" + number)).isEqualTo(nan);
     }
     if (this.type.isDecimal()) {
-      N n12345 = this.type.valueOf("123.45E+0");
-      checkRadix("123.45E+0", n12345);
-      double d = 0b0111101;
+      // System.out.println(0xAB.CDP+1D);
+      // System.out.println(Double.parseDouble("0xAB.CDP+1D"));
+      // System.out.println(34.36015625E+1D);
+      N n12345 = this.type.valueOf("34.36015625E+1");
+      checkRadix("34.36015625e+1", n12345);
+      checkRadix("0xAB.CDP+1", n12345);
+      // double d = 0b0111101;
       double d2 = 0x01.23456789ABCDEP+10D;
       // TODO
     } else {
@@ -97,13 +75,13 @@ abstract class NumberScanner<N extends Number & Comparable<N>> extends Assertion
 
   private void checkRadix(String string, N number) {
 
-    assertThat(scan(string, NumericRadixMode.ALL, false)).isEqualTo(number);
-    assertThat(scan(string.toUpperCase(Locale.ROOT), NumericRadixMode.ALL, false)).isEqualTo(number);
+    assertThat(scan(string, CharScannerRadixMode.ALL)).isEqualTo(number);
+    assertThat(scan(string.toUpperCase(Locale.ROOT), CharScannerRadixMode.ALL)).isEqualTo(number);
     N negative = this.type.subtract(this.type.getZero(), number);
-    assertThat(scan("-" + string, NumericRadixMode.ALL, false)).isEqualTo(negative);
-    CharStreamScanner scanner = this.factory.apply(number.toString() + ".e");
-    assertThat(scan(scanner, NumericRadixMode.ALL, false)).isEqualTo(number);
-    assertThat(scanner.expect(".e")).isTrue();
+    assertThat(scan("-" + string, CharScannerRadixMode.ALL)).isEqualTo(negative);
+    CharStreamScanner scanner = this.factory.apply(number.toString() + "xe");
+    assertThat(scan(scanner, CharScannerRadixMode.ALL)).isEqualTo(number);
+    assertThat(scanner.expect("xe")).isTrue();
     assertThat(scanner.hasNext()).isFalse();
   }
 

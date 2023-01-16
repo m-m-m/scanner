@@ -3,6 +3,7 @@ package io.github.mmm.scanner;
 import java.util.function.Function;
 
 import io.github.mmm.base.number.NumberType;
+import io.github.mmm.scanner.number.CharScannerRadixHandler;
 
 class NumberScannerLong extends NumberScanner<Long> {
 
@@ -12,9 +13,9 @@ class NumberScannerLong extends NumberScanner<Long> {
   }
 
   @Override
-  Long doScan(CharStreamScanner scanner, NumericRadixMode radixMode, boolean noSign, Long max) {
+  Long scan(CharStreamScanner scanner, CharScannerRadixHandler radixMode) {
 
-    return scanner.readLong(radixMode, noSign, max.longValue());
+    return scanner.readLong(radixMode);
   }
 
 }
