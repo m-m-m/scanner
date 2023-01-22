@@ -31,8 +31,8 @@ public class CharScannerNumberParserString extends CharScannerNumberParserBase {
    * @param radixMode the {@link CharScannerRadixHandler} for {@link #radix(int, char)}.
    * @param acceptDecimal - {@code true} to accept decimal numbers ({@link BigDecimal}), {@code false} otherwise.
    * @param addRadix - {@code true} to append the radix syntax to the number {@link String}, {@code false} otherwise.
-   * @param delimiters
-   * @param supportSpecials
+   * @param delimiters the {@link String} with the accepted delimiter characters (e.g. "", "_", or "_,").
+   * @param supportSpecials - {@code true} to support special numbers like NaN or Infinity.
    */
   public CharScannerNumberParserString(CharScannerRadixHandler radixMode, boolean acceptDecimal, boolean addRadix,
       String delimiters, boolean supportSpecials) {
@@ -40,7 +40,7 @@ public class CharScannerNumberParserString extends CharScannerNumberParserBase {
     super(radixMode, specials(delimiters, supportSpecials));
     this.acceptDecimal = acceptDecimal;
     this.addRadix = addRadix;
-    this.number = new StringBuilder();
+    this.builder = new StringBuilder();
   }
 
   @Override
@@ -59,7 +59,7 @@ public class CharScannerNumberParserString extends CharScannerNumberParserBase {
 
   private boolean isEmpty() {
 
-    return this.number.isEmpty();
+    return this.builder.isEmpty();
   }
 
   /**
@@ -71,7 +71,7 @@ public class CharScannerNumberParserString extends CharScannerNumberParserBase {
       return null;
     }
     // radix != 10 is not supported, simply use ONLY_10 for BigDecimal
-    return new BigDecimal(this.number.toString());
+    return new BigDecimal(this.builder.toString());
   }
 
   /**
@@ -82,18 +82,18 @@ public class CharScannerNumberParserString extends CharScannerNumberParserBase {
     if (isEmpty()) {
       return null;
     }
-    return new BigInteger(this.number.toString(), this.radix);
+    return new BigInteger(this.builder.toString(), this.radix);
   }
 
   /**
-   * @return the number as {@link Double}.
+   * @return the number as {@link Double} or {@code null} if no number was found.
    */
   public Double asDouble() {
 
     if (isEmpty()) {
       return null;
     }
-    String string = this.number.toString();
+    String string = this.builder.toString();
     try {
       return Double.valueOf(string);
     } catch (NumberFormatException e) {
@@ -102,20 +102,25 @@ public class CharScannerNumberParserString extends CharScannerNumberParserBase {
   }
 
   /**
-   * @return the number as {@link Float}.
+   * @return the number as {@link Float} or {@code null} if no number was found.
    */
   public Float asFloat() {
 
     if (isEmpty()) {
       return null;
     }
-    return Float.valueOf(this.number.toString());
+    return Float.valueOf(this.builder.toString());
   }
 
-  @Override
-  public String toString() {
+  /**
+   * @return the number as {@link String} or {@code null} if no number was found.
+   */
+  public String asString() {
 
-    return this.number.toString();
+    if (isEmpty()) {
+      return null;
+    }
+    return this.builder.toString();
   }
 
 }

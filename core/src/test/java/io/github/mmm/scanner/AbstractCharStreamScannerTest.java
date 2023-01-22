@@ -3,11 +3,15 @@
 package io.github.mmm.scanner;
 
 import java.util.Locale;
+import java.util.Objects;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import io.github.mmm.base.filter.CharFilter;
+import io.github.mmm.base.number.NumberType;
+import io.github.mmm.scanner.number.CharScannerNumberParserLang;
+import io.github.mmm.scanner.number.CharScannerRadixMode;
 
 /**
  * This is the abstract test for implementations of {@link CharStreamScanner}.
@@ -400,6 +404,78 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     assertThat(scanner.readDouble()).isNull();
     // scanner.require("xyz");
     assertThat(scanner.read(Integer.MAX_VALUE)).isEqualTo("xyz");
+  }
+
+  @Test
+  public void testReadDoubleLang() {
+
+    checkDoubleString("-9.87654321098765432109876543210");
+    checkDoubleString("-2.2250738585072012e+307");
+    // TODO this one is currently causing rounding error
+    // checkDoubleString("9.8765432109876543210e+307");
+    checkDoubleString("2.2250738585072012e-308"); // CVE-2010-4476
+    checkDoubleString("-2.2250738585072012e-308");
+    checkDoubleString("1.23e-348"); // +0.0 (underflow)
+    checkDoubleString("-1.23e-348"); // -0.0 (underflow)
+    checkDoubleString("123456789012345678901234567890e-1");
+    checkDoubleString("123456789012345678901234567890e+20");
+    checkDoubleString("-Infinity");
+    checkDoubleString("-NaN");
+    checkDoubleString("0x1234567890ABCDEF1234567890ABCDEF.0P1");
+    checkDoubleString("0x123456789ABCDEF0123456789ABCDEF01234567890ABCDEFP+2");
+    checkDoubleString("0x0.00000000000001234567890ABCDEFP-900");
+    checkDoubleString("0xAB.CDEF01234567890ABCDEFP+1");
+    checkDoubleString("0xAB.CDEF01234567890000000P+1");
+    checkDoubleString("0xAB.CDEF0123456789FF0000FP+1");
+    checkDoubleString("0xABCDEF0123456789FF0000FP+1");
+    checkDoubleString("0xABCDEF0123456789FF0000FP+932"); // very large number
+    checkDoubleString("0xABCDEF0123456789FF0000FP+933"); // infinity
+    checkDoubleString("0xAB.CDP+1");
+    checkDoubleString("1.234567890e+1");
+    checkDoubleString("1.23456789012e+1");
+    checkDoubleString("12.3456789012e-1");
+    checkDoubleString(".123456789012e+2");
+    checkDoubleString("0.123456789012e+2");
+    checkDoubleString("00.1234567890120000000000000000000000000000e+2");
+  }
+
+  private void checkDoubleString(String number) {
+
+    // when
+    double expected = Double.parseDouble(number);
+    CharStreamScanner scanner = scanner(number, 9);
+    CharScannerNumberParserLang numberParser = new CharScannerNumberParserLang(CharScannerRadixMode.NO_OCTAL,
+        NumberType.DOUBLE, "_");
+    scanner.readNumber(numberParser);
+    Double result = numberParser.asDouble();
+
+    // then
+    if (!Objects.equals(result, expected)) {
+      System.out.println("Error for: " + number);
+      System.out.println("expected : " + formatBinary(expected) + " | " + expected);
+      System.out.println("actual   : " + formatBinary(result.doubleValue()) + " | " + result);
+    }
+    if (Double.isNaN(expected)) {
+      assertThat(result).isNaN();
+    } else {
+      assertThat(result).isEqualTo(expected);
+    }
+  }
+
+  private String formatBinary(double expected) {
+
+    String binary = Long.toUnsignedString(Double.doubleToLongBits(expected), 2);
+    int zeros = 64 - binary.length();
+    if (zeros > 0) {
+      StringBuilder sb = new StringBuilder(64);
+      while (zeros > 0) {
+        sb.append('0');
+        zeros--;
+      }
+      sb.append(binary);
+      binary = sb.toString();
+    }
+    return binary;
   }
 
   @Test

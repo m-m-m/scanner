@@ -19,32 +19,45 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
   private final CharScannerNumberSpecial[] specials;
 
   /** {@link StringBuilder} to build the number as {@link String}. Initialized by sub-class to support lazy init. */
-  protected StringBuilder number;
+  protected StringBuilder builder;
 
+  /** {@code true} if an error was detected and the result can only be an exception, {@code false} otherwise. */
   protected boolean error;
 
+  /** The initial sign character +/- or '\0' for none. */
   protected char sign;
 
+  /** The radix of the digits, initially {@code 10} but can be changed by {@link #radix(int, char)}. */
   protected int radix;
 
+  /** The radix character used by {@link #builder()} if lazy created only for error. */
   protected char radixChar;
 
+  /** The total number of digits of mantissa that have been parsed. */
   protected int digitsTotal;
 
+  /** The leading zeros of mantissa. */
   protected int digitsLeadingZeros;
 
+  /** The current number of trailing zeros of mantissa. */
   protected int digitsTrailingZeros;
 
+  /** The position of the decimal dot in the mantissa. */
   protected int dotPosition;
 
+  /** The exponent symbol character e/E/p/P or '\0' for none. */
   protected char exponentSymbol;
 
+  /** The exponent sign character +/- or '\0' for none. */
   protected char exponentSign;
 
+  /** The total number of digits of the exponent. */
   protected int exponentDigitsTotal;
 
+  /** The leading zeros of the exponent. */
   protected int exponentDigitsLeadingZeros;
 
+  /** {@code true} in case of a delimiter that has not been completed by a digit, {@code false} otherwise. */
   protected boolean openDelimiter;
 
   /**
@@ -100,7 +113,7 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
    */
   protected StringBuilder builder() {
 
-    return this.number;
+    return this.builder;
   }
 
   @Override
@@ -108,8 +121,8 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
 
     assert (this.sign == 0);
     this.sign = signChar;
-    if (this.number != null) {
-      this.number.append(signChar);
+    if (this.builder != null) {
+      this.builder.append(signChar);
     }
     return true;
   }
@@ -125,7 +138,7 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
       } else {
         this.radixChar = c;
       }
-      if (this.number != null) {
+      if (this.builder != null) {
         appendRadix();
       }
     }
@@ -138,9 +151,9 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
   protected void appendRadix() {
 
     if (this.radixChar != 0) {
-      this.number.append('0');
+      this.builder.append('0');
       if (this.radixChar != '0') {
-        this.number.append(this.radixChar);
+        this.builder.append(this.radixChar);
       }
     }
   }
@@ -148,8 +161,8 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
   @Override
   public boolean digit(int digit, char digitChar) {
 
-    if (this.number != null) {
-      this.number.append(digitChar);
+    if (this.builder != null) {
+      this.builder.append(digitChar);
     }
     if (this.exponentSymbol == 0) {
       if (digit == 0) {
@@ -159,7 +172,7 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
           this.digitsTrailingZeros++;
         }
       } else {
-        this.digitsTrailingZeros = 0;
+        resetTrailingZeros();
       }
       this.digitsTotal++;
     } else {
@@ -169,6 +182,14 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
       this.exponentDigitsTotal++;
     }
     return true;
+  }
+
+  /**
+   * Resets the trailing zeros if a non zero digit was found for mantissa.
+   */
+  protected void resetTrailingZeros() {
+
+    this.digitsTrailingZeros = 0;
   }
 
   /**
@@ -187,8 +208,8 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
         this.error = true; // only one dot allowed
         builder();
       }
-      if (this.number != null) {
-        this.number.append('.');
+      if (this.builder != null) {
+        this.builder.append('.');
       }
       return true;
     }
@@ -202,7 +223,7 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
       this.error = true;
       builder().append(e);
       if (signChar != 0) {
-        this.number.append(signChar);
+        this.builder.append(signChar);
       }
       return true;
     }
@@ -210,7 +231,7 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
       assert (this.exponentSymbol == 0); // method shall be called only once
       this.exponentSymbol = e;
       this.exponentSign = signChar;
-      if (this.number != null) {
+      if (this.builder != null) {
         appendExponent(false);
       }
       return true;
@@ -227,9 +248,9 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
   protected void appendExponent(boolean lazy) {
 
     if (this.exponentSymbol != 0) {
-      this.number.append(this.exponentSymbol);
+      this.builder.append(this.exponentSymbol);
       if ((this.exponentSign == '+') || ((this.exponentSign == '-' && !lazy))) {
-        this.number.append(this.exponentSign);
+        this.builder.append(this.exponentSign);
       }
     }
   }
@@ -256,8 +277,8 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
     if (special.length() == 1) {
       this.openDelimiter = true;
     }
-    if (this.number != null) {
-      this.number.append(special);
+    if (this.builder != null) {
+      this.builder.append(special);
     }
   }
 
@@ -284,7 +305,7 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
   @Override
   public String toString() {
 
-    return this.number.toString();
+    return this.builder.toString();
   }
 
   /**

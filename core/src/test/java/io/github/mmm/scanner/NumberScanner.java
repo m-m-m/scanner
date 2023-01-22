@@ -46,6 +46,10 @@ abstract class NumberScanner<N extends Number & Comparable<N>> extends Assertion
     if (max != null) {
       checkLimit(max);
       checkLimit(this.type.getMin());
+      if (!this.type.isDecimal()) {
+        String maxHex = "0x" + this.type.format(max, 16);
+        checkWithRadixAll(maxHex, max);
+      }
     }
     N nan = this.type.getNaN();
     if (nan != null) {
@@ -69,6 +73,7 @@ abstract class NumberScanner<N extends Number & Comparable<N>> extends Assertion
       checkRadix("123", n123);
       checkRadix("0b01111011", n123);
       checkRadix("0x7b", n123);
+      checkRadix("0X7B", n123);
       checkRadix("0173", n123);
     }
   }
@@ -112,6 +117,13 @@ abstract class NumberScanner<N extends Number & Comparable<N>> extends Assertion
     if (!string.startsWith("-")) {
       check("+" + string);
     }
+    return result;
+  }
+
+  private N checkWithRadixAll(String number, N value) {
+
+    N result = scan(number, CharScannerRadixMode.ALL);
+    assertThat(result).as(number).isEqualTo(value);
     return result;
   }
 
