@@ -788,7 +788,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     CharScannerNumberParserString numberParser = new CharScannerNumberParserString(CharScannerRadixMode.ALL, true, true,
         "_", true);
     readNumber(numberParser);
-    String decimal = numberParser.toString();
+    String decimal = numberParser.asString();
     if (decimal == null) {
       return null;
     }
