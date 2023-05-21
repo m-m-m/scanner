@@ -59,7 +59,7 @@ public class CharScannerNumberParserString extends CharScannerNumberParserBase {
 
   private boolean isEmpty() {
 
-    return this.builder.isEmpty();
+    return this.builder.length() == 0;
   }
 
   /**

@@ -546,10 +546,12 @@ public class CharScannerNumberParserLang extends CharScannerNumberParserBase {
       } else {
         ieee754Bits = ieee754Bits | (ex << 52);
       }
+      // determine number of leading zero bits
       int bits = Integer.numberOfLeadingZeros((int) (m >>> 32));
       if (bits == 32) {
         bits = 32 + Integer.numberOfLeadingZeros((int) m);
       }
+      // shift according to leading zero bits
       int shift = bits - 12 + 1; // 12 = 64 - 52 = bits for sign(1) + exponent(11) [without mantissa(52)]
       if (shift > 0) {
         m = m << shift;
