@@ -290,6 +290,34 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
   }
 
   @Override
+  public String peekWhile(CharFilter filter, int maxLen) {
+
+    if (maxLen < 0) {
+      throw new IllegalArgumentException("Max must NOT be negative: " + maxLen);
+    }
+    int len = 0;
+    int end = this.offset + maxLen;
+    if (end < 0) { // overflow?
+      end = maxLen;
+    }
+    if (end > this.limit) {
+      end = this.limit;
+    }
+    while (len < end) {
+      char c = this.buffer[len];
+      if (!filter.accept(c)) {
+        break;
+      }
+      len++;
+    }
+    if (len == 0) {
+      return "";
+    } else {
+      return new String(this.buffer, this.offset, len);
+    }
+  }
+
+  @Override
   public String readUntil(CharFilter filter, boolean acceptEot) {
 
     int start = this.offset;

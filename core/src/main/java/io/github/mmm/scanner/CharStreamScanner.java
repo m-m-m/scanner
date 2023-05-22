@@ -81,6 +81,17 @@ public interface CharStreamScanner extends TextFormatProcessor {
   String peekString(int count);
 
   /**
+   * @param filter the {@link CharFilter} {@link CharFilter#accept(char) accepting} only the characters to peek.
+   * @param maxLen the maximum number of characters to peek (get as lookahead without modifying this stream).
+   * @return a {@link String} with the {@link #peek() peeked} characters of the given {@code maxLen} or less if a
+   *         character was hit that is <em>not</em> {@link CharFilter#accept(char) accepted} by the given {@code filter}
+   *         or the end-of-text has been reached before. The state of this stream remains unchanged.
+   * @see #readWhile(CharFilter)
+   * @see #skip(int)
+   */
+  String peekWhile(CharFilter filter, int maxLen);
+
+  /**
    * This method reads the number of {@link #next() next characters} given by {@code count} and returns them as string.
    * If there are less characters {@link #hasNext() available} the returned string will be shorter than {@code count}
    * and only contain the available characters.

@@ -5,6 +5,7 @@ package io.github.mmm.scanner;
 import java.io.IOException;
 import java.io.Reader;
 
+import io.github.mmm.base.filter.CharFilter;
 import io.github.mmm.base.text.TextFormatMessageHandler;
 
 /**
@@ -148,6 +149,47 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
       StringBuilder sb = new StringBuilder(fullRest);
       sb.append(this.buffer, this.offset, rest);
       sb.append(this.lookaheadBuffer, 0, count - rest);
+      return sb.toString();
+    } else {
+      return new String(this.buffer, this.offset, rest);
+    }
+  }
+
+  @Override
+  public String peekWhile(CharFilter filter, int maxLen) {
+
+    if (!hasNext()) {
+      return "";
+    }
+    int rest = this.limit - this.offset;
+    if (rest > maxLen) {
+      rest = maxLen;
+    }
+    int len = 0;
+    while (len < rest) {
+      char c = this.buffer[this.offset + len];
+      if (!filter.accept(c)) {
+        return new String(this.buffer, this.offset, len);
+      }
+      len++;
+    }
+    if (fillLookahead()) {
+      int fullRest = rest + this.lookaheadLimit;
+      if ((maxLen > fullRest) && !isEos()) {
+        throwLookaheadError(maxLen);
+      }
+      len = 0;
+      int end = maxLen - rest;
+      while (len < end) {
+        char c = this.lookaheadBuffer[len];
+        if (!filter.accept(c)) {
+          break;
+        }
+        len++;
+      }
+      StringBuilder sb = new StringBuilder(rest + len);
+      sb.append(this.buffer, this.offset, rest);
+      sb.append(this.lookaheadBuffer, 0, len);
       return sb.toString();
     } else {
       return new String(this.buffer, this.offset, rest);
@@ -406,6 +448,14 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
       setOffset(myCharsIndex);
     }
     return true;
+  }
+
+  @Override
+  protected void reset() {
+
+    super.reset();
+    this.lookaheadLimit = 0;
+    this.position = 0;
   }
 
 }

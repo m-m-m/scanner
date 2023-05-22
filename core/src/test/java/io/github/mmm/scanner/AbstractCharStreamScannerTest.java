@@ -713,6 +713,28 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   }
 
   @Test
+  public void testPeekWhile() {
+
+    // given
+    String string = "abc def  ghi";
+    CharFilter textFilter = CharFilter.LATIN_LETTER;
+    CharFilter spaceFilter = CharFilter.WHITESPACE;
+    // when
+    CharStreamScanner scanner = scanner(string, 3);
+    // then
+    assertThat(scanner.peekWhile(textFilter, 3)).isEqualTo("abc");
+    scanner.skip(3);
+    assertThat(scanner.peekWhile(textFilter, 3)).isEmpty();
+    scanner.skip(1);
+    assertThat(scanner.peekWhile(textFilter, 3)).isEqualTo("def");
+    scanner.skip(3);
+    assertThat(scanner.peekWhile(textFilter, 3)).isEmpty();
+    scanner.skip(2);
+    assertThat(scanner.peekWhile(textFilter, 2)).isEqualTo("gh");
+    assertThat(scanner.peekWhile(textFilter, 3)).isEqualTo("ghi");
+  }
+
+  @Test
   public void testReadLine() {
 
     // given
