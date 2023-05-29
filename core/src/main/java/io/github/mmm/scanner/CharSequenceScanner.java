@@ -62,7 +62,20 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
    */
   public CharSequenceScanner(String string, TextFormatMessageHandler messageHandler) {
 
-    this(string.toCharArray(), messageHandler);
+    this(string, messageHandler, 1, 1);
+  }
+
+  /**
+   * The constructor.
+   *
+   * @param string is the {@link #getOriginalString() string} to parse.
+   * @param messageHandler the {@link TextFormatMessageHandler}.
+   * @param line the initial {@link #getLine() line}.
+   * @param column the initial {@link #getColumn() column}.
+   */
+  public CharSequenceScanner(String string, TextFormatMessageHandler messageHandler, int line, int column) {
+
+    this(string.toCharArray(), messageHandler, line, column);
     this.string = string;
   }
 
@@ -91,6 +104,19 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
    * The constructor.
    *
    * @param characters is an array containing the characters to scan.
+   * @param messageHandler the {@link TextFormatMessageHandler}.
+   * @param line the initial {@link #getLine() line}.
+   * @param column the initial {@link #getColumn() column}.
+   */
+  public CharSequenceScanner(char[] characters, TextFormatMessageHandler messageHandler, int line, int column) {
+
+    this(characters, 0, characters.length, messageHandler, line, column);
+  }
+
+  /**
+   * The constructor.
+   *
+   * @param characters is an array containing the characters to scan.
    * @param offset is the index of the first char to scan in {@code characters} (typically {@code 0} to start at the
    *        beginning of the array).
    * @param length is the {@link #getLength() number of characters} to scan from {@code characters} starting at
@@ -113,7 +139,25 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
    */
   public CharSequenceScanner(char[] characters, int offset, int length, TextFormatMessageHandler messageHandler) {
 
-    super(characters, messageHandler);
+    this(characters, offset, length, messageHandler, 1, 1);
+  }
+
+  /**
+   * The constructor.
+   *
+   * @param characters is an array containing the characters to scan.
+   * @param offset is the index of the first char to scan in {@code characters} (typically {@code 0} to start at the
+   *        beginning of the array).
+   * @param length is the {@link #getLength() number of characters} to scan from {@code characters} starting at
+   *        {@code offset} (typically <code>characters.length - offset</code>).
+   * @param messageHandler the {@link TextFormatMessageHandler}.
+   * @param line the initial {@link #getLine() line}.
+   * @param column the initial {@link #getColumn() column}.
+   */
+  public CharSequenceScanner(char[] characters, int offset, int length, TextFormatMessageHandler messageHandler,
+      int line, int column) {
+
+    super(characters, messageHandler, line, column);
     if (offset < 0) {
       throw new IndexOutOfBoundsException(Integer.toString(offset));
     }
@@ -264,7 +308,7 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
         return this.buffer[i];
       }
     }
-    return 0;
+    return EOS;
   }
 
   /**
@@ -296,15 +340,12 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
       throw new IllegalArgumentException("Max must NOT be negative: " + maxLen);
     }
     int len = 0;
-    int end = this.offset + maxLen;
-    if (end < 0) { // overflow?
+    int end = this.limit - this.offset;
+    if (end > maxLen) {
       end = maxLen;
     }
-    if (end > this.limit) {
-      end = this.limit;
-    }
     while (len < end) {
-      char c = this.buffer[len];
+      char c = this.buffer[this.offset + len];
       if (!filter.accept(c)) {
         break;
       }

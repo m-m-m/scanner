@@ -82,7 +82,7 @@ public interface CharStreamScanner extends TextFormatProcessor {
 
   /**
    * @param filter the {@link CharFilter} {@link CharFilter#accept(char) accepting} only the characters to peek.
-   * @param maxLen the maximum number of characters to peek (get as lookahead without modifying this stream).
+   * @param maxLen the maximum number of characters to peek (to get as lookahead without modifying this stream).
    * @return a {@link String} with the {@link #peek() peeked} characters of the given {@code maxLen} or less if a
    *         character was hit that is <em>not</em> {@link CharFilter#accept(char) accepted} by the given {@code filter}
    *         or the end-of-text has been reached before. The state of this stream remains unchanged.
@@ -709,14 +709,60 @@ public interface CharStreamScanner extends TextFormatProcessor {
   boolean expect(String expected, boolean ignoreCase, boolean lookahead, int offset);
 
   /**
-   * This method checks that the {@link #next() next character} is equal to the given {@code expected} character. <br>
-   * If the current character was as expected, the parser points to the next character. Otherwise its position will
-   * remain unchanged.
+   * This method determines if the given {@code expected} {@link String} is completely present at the current position.
+   * It will only {@link #next() consume} characters and change the state if {@code lookahead} is {@code false} and the
+   * {@code expected} {@link String} was found (entirely).<br>
+   * <b>Attention:</b><br>
+   * This method requires lookahead. For implementations that are backed by an underlying stream (or reader) the
+   * {@link String#length() length} of the expected {@link String} shall not exceed the available lookahead size (buffer
+   * capacity given at construction time). Otherwise the method may fail.
+   *
+   * @param expected the expected {@link String} to search for.
+   * @param ignoreCase - if {@code true} the case of the characters is ignored when compared, {@code false} otherwise.
+   * @param lookahead - if {@code true} the state of the scanner remains unchanged even if the expected {@link String}
+   *        has been found, {@code false} otherwise (expected {@link String} is consumed on match).
+   * @param offset the number of characters that have already been {@link #peek(int) peeked} and after which the given
+   *        {@link String} is expected. Will typically be {@code 0}. If {@code lookahead} is {@code false} and the
+   *        expected {@link String} was found these characters will be {@link #skip(int) skipped} together with the
+   *        expected {@link String}.
+   * @param warning {@code true} to {@link #addWarning(String) add a warning} in case the expected {@link String} was
+   *        not found, {@code false} otherwise.
+   * @return {@code true} if the {@code expected} string was successfully found, {@code false} otherwise.
+   */
+  default boolean expect(String expected, boolean ignoreCase, boolean lookahead, int offset, boolean warning) {
+
+    boolean found = expect(expected, ignoreCase, lookahead, offset);
+    if (!found && warning) {
+      addWarning("Expected '" + expected + "'");
+    }
+    return found;
+  }
+
+  /**
+   * This method checks if the {@link #next() next character} is equal to the given {@code expected} character. <br>
+   * If the character matched with the {@code expected} character, the parser points to the next character. Otherwise
+   * its position will remain unchanged.
    *
    * @param expected is the expected character.
    * @return {@code true} if the current character is the same as {@code expected}, {@code false} otherwise.
    */
-  boolean expectOne(char expected);
+  default boolean expectOne(char expected) {
+
+    return expectOne(expected, false);
+  }
+
+  /**
+   * This method checks if the {@link #next() next character} is equal to the given {@code expected} character. <br>
+   * If the character matched with the {@code expected} character, the parser points to the next character. Otherwise
+   * its position will remain unchanged.
+   *
+   * @param expected the character to expect as {@link #next() next} in this stream.
+   * @param warning {@code true} to {@link #addWarning(String) add a warning} in case the expected character was not
+   *        present, {@code false} otherwise.
+   * @return {@code true} if the expected character was found and consumer, {@code false} otherwise (and this stream
+   *         remains unchanged).
+   */
+  boolean expectOne(char expected, boolean warning);
 
   /**
    * This method checks that the {@link #next() next character} is {@link CharFilter#accept(char) accepted} by the given
@@ -935,6 +981,14 @@ public interface CharStreamScanner extends TextFormatProcessor {
    *         case the end of data was reached.
    */
   int skip(int count);
+
+  /**
+   * @return {@code 0} if the {@link #next() next characeter} is not a newline and the stream remains unchanged,
+   *         {@code 1} if the {@link #next() next characeter} was '\n' and has been {@link #skip(int) skipped}, or
+   *         {@code 2} if the{@link #next() next characeters} have been '\r' and '\n' and have been {@link #skip(int)
+   *         skipped}.
+   */
+  int skipNewLine();
 
   /**
    * This method reads all {@link #next() next characters} until the given {@code substring} has been detected. <br>

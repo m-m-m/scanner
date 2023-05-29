@@ -2,8 +2,6 @@
  * http://www.apache.org/licenses/LICENSE-2.0 */
 package io.github.mmm.scanner;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -34,8 +32,6 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
 
   private final TextFormatMessageHandler messageHandler;
 
-  private final boolean collectMessages;
-
   /** The internal buffer with character data. */
   protected char[] buffer;
 
@@ -54,9 +50,6 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
   /** @see #getColumn() */
   protected int column;
 
-  /** @see #getMessages() */
-  private List<TextFormatMessage> messages;
-
   /** A {@link StringBuilder} instance that can be shared and reused. May initially be <code>null</code>. */
   private StringBuilder sb;
 
@@ -74,10 +67,36 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
   /**
    * The constructor.
    *
+   * @param capacity the capacity of the internal buffer in {@code char}s.
+   * @param messageHandler the {@link TextFormatMessageHandler}.
+   * @param line the initial {@link #getLine() line}.
+   * @param column the initial {@link #getColumn() column}.
+   */
+  public AbstractCharStreamScanner(int capacity, TextFormatMessageHandler messageHandler, int line, int column) {
+
+    this(new char[capacity], messageHandler, line, column);
+  }
+
+  /**
+   * The constructor.
+   *
    * @param buffer the internal {@code char[]} buffer.
    * @param messageHandler the {@link TextFormatMessageHandler}.
    */
   public AbstractCharStreamScanner(char[] buffer, TextFormatMessageHandler messageHandler) {
+
+    this(buffer, messageHandler, 1, 1);
+  }
+
+  /**
+   * The constructor.
+   *
+   * @param buffer the internal {@code char[]} buffer.
+   * @param messageHandler the {@link TextFormatMessageHandler}.
+   * @param line the initial {@link #getLine() line}.
+   * @param column the initial {@link #getColumn() column}.
+   */
+  public AbstractCharStreamScanner(char[] buffer, TextFormatMessageHandler messageHandler, int line, int column) {
 
     super();
     if (messageHandler == null) {
@@ -85,16 +104,11 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     } else {
       this.messageHandler = messageHandler;
     }
-    if (this.messageHandler instanceof SimpleTextFormatMessageHandler) {
-      this.collectMessages = ((SimpleTextFormatMessageHandler) this.messageHandler).isCollectMessages();
-    } else {
-      this.collectMessages = true;
-    }
     this.buffer = buffer;
     this.offset = 0;
     this.limit = 0;
-    this.line = 1;
-    this.column = 1;
+    this.line = line;
+    this.column = column;
   }
 
   @Override
@@ -112,23 +126,13 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
   @Override
   public void addMessage(TextFormatMessage message) {
 
-    message = this.messageHandler.handle(message);
-    if (this.collectMessages) {
-      getMessages().add(message);
-    }
+    this.messageHandler.add(message);
   }
 
   @Override
   public List<TextFormatMessage> getMessages() {
 
-    if (this.messages == null) {
-      if (this.collectMessages) {
-        this.messages = new ArrayList<>();
-      } else {
-        this.messages = Collections.emptyList();
-      }
-    }
-    return this.messages;
+    return this.messageHandler.getMessages();
   }
 
   /**
@@ -576,15 +580,15 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
   }
 
   @Override
-  public boolean expectOne(char expected) {
+  public boolean expectOne(char expected, boolean warning) {
 
-    if (!hasNext()) {
-      return false;
-    }
-    if (this.buffer[this.offset] == expected) {
+    if (hasNext() && (this.buffer[this.offset] == expected)) {
       handleChar(expected);
       this.offset++;
       return true;
+    }
+    if (warning) {
+      addWarning("Expected '" + expected + "'");
     }
     return false;
   }
@@ -1247,6 +1251,30 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
       }
     }
     return skipped;
+  }
+
+  @Override
+  public int skipNewLine() {
+
+    int skip = 0;
+    if (hasNext()) {
+      if (this.buffer[this.offset] == '\n') {
+        skip = 1;
+      } else if (this.buffer[this.offset] == '\r') {
+        if (((this.offset + 1) < this.limit) && (this.buffer[this.offset + 1] == '\n')) {
+          skip = 2;
+        } else if (peek(1) == '\n') {
+          skip(2);
+          return 2;
+        }
+      }
+    }
+    if (skip > 0) {
+      this.offset = this.offset + skip;
+      this.line++;
+      this.column = 1;
+    }
+    return skip;
   }
 
   @Override

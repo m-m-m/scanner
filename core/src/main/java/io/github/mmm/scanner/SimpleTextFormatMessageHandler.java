@@ -5,16 +5,16 @@ import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.event.Level;
 
+import io.github.mmm.base.text.AbstractTextFormatMessageHandler;
 import io.github.mmm.base.text.TextFormatMessage;
 import io.github.mmm.base.text.TextFormatMessageHandler;
 import io.github.mmm.base.text.TextFormatMessageType;
-import io.github.mmm.base.text.TextFormatProcessor;
 
 /**
  * Default implementation of {@link TextFormatMessageHandler}.
  */
 @SuppressWarnings("exports")
-public class SimpleTextFormatMessageHandler implements TextFormatMessageHandler {
+public class SimpleTextFormatMessageHandler extends AbstractTextFormatMessageHandler {
 
   /** Maps each {@link TextFormatMessageType} to its analog {@link Level}. */
   public static final Function<TextFormatMessageType, Level> LOG_MAPPER_DEFAULT = new LogLevelMapper(false);
@@ -28,13 +28,9 @@ public class SimpleTextFormatMessageHandler implements TextFormatMessageHandler 
   private static final SimpleTextFormatMessageHandler INSTANCE = new SimpleTextFormatMessageHandler(false,
       AbstractCharStreamScanner.LOG, LOG_MAPPER_INFO_AS_DEBUG, false);
 
-  private final boolean throwOnError;
-
   private final Logger logger;
 
   private final Function<TextFormatMessageType, Level> logLevelMapper;
-
-  private final boolean collectMessages;
 
   /**
    * The constructor.
@@ -48,11 +44,9 @@ public class SimpleTextFormatMessageHandler implements TextFormatMessageHandler 
   public SimpleTextFormatMessageHandler(boolean throwOnError, Logger logger,
       Function<TextFormatMessageType, Level> logLevelMapper, boolean collectMessages) {
 
-    super();
-    this.throwOnError = throwOnError;
+    super(throwOnError, collectMessages);
     this.logger = logger;
     this.logLevelMapper = logLevelMapper;
-    this.collectMessages = collectMessages;
   }
 
   private void log(TextFormatMessage message) {
@@ -71,20 +65,7 @@ public class SimpleTextFormatMessageHandler implements TextFormatMessageHandler 
   public TextFormatMessage handle(TextFormatMessage message) {
 
     log(message);
-    if (this.throwOnError && (message.getType() == TextFormatMessageType.ERROR)) {
-      throw new IllegalStateException(message.getText());
-    }
-    return TextFormatMessageHandler.super.handle(message);
-  }
-
-  /**
-   * @return {@code true} to collect {@link TextFormatProcessor#getMessages() messages} (default) or {@code null} if no
-   *         {@link TextFormatMessage} should be collected and {@link TextFormatProcessor#getMessages()} will always
-   *         return the {@link java.util.Collections#emptyList() empty list}.
-   */
-  public boolean isCollectMessages() {
-
-    return this.collectMessages;
+    return super.handle(message);
   }
 
   private static final class LogLevelMapper implements Function<TextFormatMessageType, Level> {
