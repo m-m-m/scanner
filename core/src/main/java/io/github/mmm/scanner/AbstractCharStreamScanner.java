@@ -353,7 +353,9 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
   @Override
   public String readUntil(final char stop, boolean acceptEot, CharScannerSyntax syntax) {
 
-    return readUntil(c -> (c == stop), acceptEot, syntax);
+    String result = readUntil(c -> (c == stop), acceptEot, syntax);
+    expectOne(stop);
+    return result;
   }
 
   @Override
@@ -366,12 +368,13 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     while (true) {
       // int end = this.limit;
       while (this.offset < this.limit) {
-        char c = this.buffer[this.offset++];
-        handleChar(c);
+        char c = this.buffer[this.offset];
         state.parse(c);
         if (state.done) {
           return state.builder.toString();
         }
+        handleChar(c);
+        this.offset++;
       }
       boolean eot = isEot();
       if (!eot || acceptEot) {
@@ -1576,18 +1579,20 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
         if ((this.activeQuoteLazyEnd != 0) && (c == this.activeQuoteLazyEnd)) {
           this.activeQuoteEnd = 0;
           this.builder.append(c); // quote (was escaped lazily)
-          this.start = AbstractCharStreamScanner.this.offset;
+          this.start = AbstractCharStreamScanner.this.offset + 1;
         } else if (this.quoteEscapeActive) {
           this.quoteEscapeActive = false;
           if (c == this.activeQuoteEnd) {
             this.builder.append(c); // quote (was escaped)
-            this.start = AbstractCharStreamScanner.this.offset;
+            this.start = AbstractCharStreamScanner.this.offset + 1;
           } else if (this.activeQuoteEscape == this.activeQuoteEnd) {
             // quotation done
             this.activeQuoteEnd = 0;
-            this.start = AbstractCharStreamScanner.this.offset - 1;
+            this.start = AbstractCharStreamScanner.this.offset;
           }
-        } else if (c == this.activeQuoteEscape) {
+        } else if ((c == this.activeQuoteEscape)
+        // && (!this.activeQuoteLazy || (this.activeQuoteEscape != this.activeQuoteEnd))
+        ) {
           // escape in quote
           append = true;
           this.quoteEscapeActive = true;
@@ -1602,7 +1607,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
         if (c == this.activeEntityEnd) {
           // entity end detected...
           this.activeEntityEnd = 0;
-          int len = AbstractCharStreamScanner.this.offset - this.start - 1;
+          int len = AbstractCharStreamScanner.this.offset - this.start;
           String entity;
           if (this.entityBuilder == null) {
             entity = new String(AbstractCharStreamScanner.this.buffer, this.start, len);
@@ -1612,7 +1617,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
             this.entityBuilder = null;
           }
           this.builder.append(this.syntax.resolveEntity(entity));
-          this.start = AbstractCharStreamScanner.this.offset;
+          this.start = AbstractCharStreamScanner.this.offset + 1;
         }
       } else if (this.filter.accept(c)) {
         append = true;
@@ -1643,11 +1648,11 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
         }
       }
       if (append) {
-        int len = AbstractCharStreamScanner.this.offset - this.start - 1;
+        int len = AbstractCharStreamScanner.this.offset - this.start;
         if (len > 0) {
           this.builder.append(AbstractCharStreamScanner.this.buffer, this.start, len);
         }
-        this.start = AbstractCharStreamScanner.this.offset;
+        this.start = AbstractCharStreamScanner.this.offset + 1;
       }
     }
   }

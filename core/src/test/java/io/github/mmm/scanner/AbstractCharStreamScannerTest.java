@@ -293,7 +293,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     syntax.setQuote('\'');
     syntax.setQuoteEscape('\'');
     // when + then
-    check('\0', true, syntax, "''a''''b'''c'", "a'b'c");
+    check('x', true, syntax, "''a''''b'''c''d' x", "a'b'c'd ");
   }
 
   /**
@@ -310,7 +310,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     syntax.setQuoteEscape('\'');
     syntax.setQuoteEscapeLazy(true);
     // when + then
-    check('\0', true, syntax, "''a''''b'''c'", "'a''b'c");
+    check('x', true, syntax, "''a''''b'''c'dx", "'a''b'cd");
   }
 
   /**
@@ -329,7 +329,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     syntax.setAltQuote('"');
     syntax.setAltQuoteEscape('"');
     // when + then
-    check('\0', true, syntax, "\"\"a\"\"\"\"b\"\"\"c\"", "a\"b\"c");
+    check('x', true, syntax, "\"\"a\"\"\"\"b\"\"\"c\"dx", "a\"b\"cd");
   }
 
   /**
@@ -349,7 +349,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     syntax.setAltQuoteEscape('"');
     syntax.setAltQuoteEscapeLazy(true);
     // when + then
-    check('\0', true, syntax, "\"\"a\"\"\"\"b\"\"\"c\"", "\"a\"\"b\"c");
+    check('x', true, syntax, "\"\"a\"\"\"\"b\"\"\"c\"dx", "\"a\"\"b\"cd");
   }
 
   /**
@@ -594,9 +594,9 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     assertThat(scanner.getLine()).isEqualTo(1);
   }
 
-  private CharStreamScanner check(char stop, boolean acceptEot, CharScannerSyntax syntax, String input,
-      String expected) {
+  private void check(char stop, boolean acceptEot, CharScannerSyntax syntax, String input, String expected) {
 
+    // pass 1: test with readUntil giving stop as char
     CharStreamScanner scanner = scanner(input);
     String output = scanner.readUntil(stop, acceptEot, syntax);
     assertThat(output).isEqualTo(expected);
@@ -606,7 +606,19 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
       assertThat(scanner.getColumn()).isEqualTo(length + 1);
       assertThat(scanner.getLine()).isEqualTo(1);
     }
-    return scanner;
+
+    // pass 2: test with readUntil giving stop as char
+    scanner = scanner(input);
+    output = scanner.readUntil(c -> c == stop, acceptEot, syntax);
+    assertThat(output).isEqualTo(expected);
+    assertThat(scanner.hasNext()).isTrue();
+    assertThat(scanner.next()).isEqualTo(stop);
+    if (!scanner.hasNext()) {
+      int length = input.length();
+      assertThat(scanner.getPosition()).isEqualTo(length);
+      assertThat(scanner.getColumn()).isEqualTo(length + 1);
+      assertThat(scanner.getLine()).isEqualTo(1);
+    }
   }
 
   @Test

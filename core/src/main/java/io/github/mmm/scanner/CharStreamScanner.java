@@ -136,6 +136,54 @@ public interface CharStreamScanner extends TextFormatProcessor {
   String readUntil(char stop, boolean acceptEnd);
 
   /**
+   * This method reads all {@link #next() next characters} until the given (un-escaped) {@code stop} character or the
+   * end is reached. <br>
+   * In advance to {@link #readUntil(char, boolean)}, this method allows that the {@code stop} character may be used in
+   * the input-string by adding the given {@code escape} character. After the call of this method, the current index
+   * will point to the next character after the (first) {@code stop} character or to the end if NO such character
+   * exists. <br>
+   * This method is especially useful when quoted strings should be parsed. E.g.:
+   *
+   * <pre>
+   * {@link CharStreamScanner} scanner = getScanner();
+   * doSomething();
+   * char c = scanner.{@link #next()};
+   * if ((c == '"') || (c == '\'')) {
+   *   char escape = c; // may also be something like '\\'
+   *   String quote = scanner.{@link #readUntil(char, boolean, char) readUntil}(c, false, escape)
+   * } else {
+   *   doOtherThings();
+   * }
+   * </pre>
+   *
+   * @param stop is the character to read until.
+   * @param acceptEnd if {@code true} the end of data will be treated as {@code stop}, too.
+   * @param escape is the character used to escape the {@code stop} character. To add an occurrence of the
+   *        {@code escape} character it has to be duplicated (occur twice). The {@code escape} character may also be
+   *        equal to the {@code stop} character. If other regular characters are escaped the {@code escape} character is
+   *        simply ignored.
+   * @return the string with all read characters excluding the {@code stop} character or {@code null} if there was no
+   *         {@code stop} character and {@code acceptEnd} is {@code false}.
+   */
+  String readUntil(char stop, boolean acceptEnd, char escape);
+
+  /**
+   * This method reads all {@link #next() next characters} until the given {@code stop} character or the end of the
+   * string to parse is reached. In advance to {@link #readUntil(char, boolean)}, this method will scan the input using
+   * the given {@code syntax} which e.g. allows to {@link CharScannerSyntax#getEscape() escape} the stop character. <br>
+   * After the call of this method, the current index will point to the next character after the (first) {@code stop}
+   * character or to the end of the string if NO such character exists.
+   *
+   * @param stop is the character to read until.
+   * @param acceptEnd if {@code true} the end of data will be treated as {@code stop}, too.
+   * @param syntax contains the characters specific for the syntax to read.
+   * @return the string with all read characters excluding the {@code stop} character or {@code null} if there was no
+   *         {@code stop} character.
+   * @see #readUntil(CharFilter, boolean, CharScannerSyntax)
+   */
+  String readUntil(char stop, boolean acceptEnd, CharScannerSyntax syntax);
+
+  /**
    * This method reads all {@link #next() next characters} until the first character {@link CharFilter#accept(char)
    * accepted} by the given {@code filter} or the end is reached. <br>
    * After the call of this method, the current index will point to the first {@link CharFilter#accept(char) accepted}
@@ -224,60 +272,12 @@ public interface CharStreamScanner extends TextFormatProcessor {
   String readUntil(CharFilter filter, boolean acceptEnd, String stop, boolean ignoreCase, boolean trim);
 
   /**
-   * This method reads all {@link #next() next characters} until the given (un-escaped) {@code stop} character or the
-   * end is reached. <br>
-   * In advance to {@link #readUntil(char, boolean)}, this method allows that the {@code stop} character may be used in
-   * the input-string by adding the given {@code escape} character. After the call of this method, the current index
-   * will point to the next character after the (first) {@code stop} character or to the end if NO such character
-   * exists. <br>
-   * This method is especially useful when quoted strings should be parsed. E.g.:
-   *
-   * <pre>
-   * {@link CharStreamScanner} scanner = getScanner();
-   * doSomething();
-   * char c = scanner.{@link #next()};
-   * if ((c == '"') || (c == '\'')) {
-   *   char escape = c; // may also be something like '\'
-   *   String quote = scanner.{@link #readUntil(char, boolean, char) readUntil}(c, false, escape)
-   * } else {
-   *   doOtherThings();
-   * }
-   * </pre>
-   *
-   * @param stop is the character to read until.
-   * @param acceptEnd if {@code true} the end of data will be treated as {@code stop}, too.
-   * @param escape is the character used to escape the {@code stop} character. To add an occurrence of the
-   *        {@code escape} character it has to be duplicated (occur twice). The {@code escape} character may also be
-   *        equal to the {@code stop} character. If other regular characters are escaped the {@code escape} character is
-   *        simply ignored.
-   * @return the string with all read characters excluding the {@code stop} character or {@code null} if there was no
-   *         {@code stop} character and {@code acceptEnd} is {@code false}.
-   */
-  String readUntil(char stop, boolean acceptEnd, char escape);
-
-  /**
-   * This method reads all {@link #next() next characters} until the given {@code stop} character or the end of the
-   * string to parse is reached. In advance to {@link #readUntil(char, boolean)}, this method will scan the input using
-   * the given {@code syntax} which e.g. allows to {@link CharScannerSyntax#getEscape() escape} the stop character. <br>
-   * After the call of this method, the current index will point to the next character after the (first) {@code stop}
-   * character or to the end of the string if NO such character exists.
-   *
-   * @param stop is the character to read until.
-   * @param acceptEnd if {@code true} the end of data will be treated as {@code stop}, too.
-   * @param syntax contains the characters specific for the syntax to read.
-   * @return the string with all read characters excluding the {@code stop} character or {@code null} if there was no
-   *         {@code stop} character.
-   * @see #readUntil(CharFilter, boolean, CharScannerSyntax)
-   */
-  String readUntil(char stop, boolean acceptEnd, CharScannerSyntax syntax);
-
-  /**
    * This method reads all {@link #next() next characters} until the given {@link CharFilter}
    * {@link CharFilter#accept(char) accepts} the current character as stop character or the end of data is reached. In
    * advance to {@link #readUntil(char, boolean)}, this method will scan the input using the given {@code syntax} which
    * e.g. allows to {@link CharScannerSyntax#getEscape() escape} the stop character. <br>
-   * After the call of this method, the current index will point to the next character after the (first) {@code stop}
-   * character or to the end of the string if NO such character exists.
+   * After the call of this method, the current index will point to the first {@link CharFilter#accept(char) accepted}
+   * stop character or to the end of the string if NO such character exists.
    *
    * @param filter is used to {@link CharFilter#accept(char) decide} where to stop.
    * @param acceptEnd if {@code true} the end of data will be treated as {@code stop}, too.
