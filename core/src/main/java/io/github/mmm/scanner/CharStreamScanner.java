@@ -92,6 +92,20 @@ public interface CharStreamScanner extends TextFormatProcessor {
   String peekWhile(CharFilter filter, int maxLen);
 
   /**
+   * @param stopFilter the {@link CharFilter} that decides which characters to {@link CharFilter#accept(char) accept} as
+   *        stop characters.
+   * @param maxLen the maximum number of characters to peek (get as lookahead without modifying this stream).
+   * @return a {@link String} with the {@link #peek() peeked} characters of the given {@code maxLen} or less if a stop
+   *         character was hit or the end-of-text has been reached before. The state of this stream remains unchanged.
+   * @see #readWhile(CharFilter)
+   * @see #skip(int)
+   */
+  default String peekUntil(CharFilter stopFilter, int maxLen) {
+
+    return peekWhile(stopFilter.negate(), maxLen);
+  }
+
+  /**
    * This method reads the number of {@link #next() next characters} given by {@code count} and returns them as string.
    * If there are less characters {@link #hasNext() available} the returned string will be shorter than {@code count}
    * and only contain the available characters.
@@ -287,6 +301,22 @@ public interface CharStreamScanner extends TextFormatProcessor {
    * @see #readUntil(char, boolean, CharScannerSyntax)
    */
   String readUntil(CharFilter filter, boolean acceptEnd, CharScannerSyntax syntax);
+
+  /**
+   * @param stopFilter the {@link CharFilter} that decides which characters to {@link CharFilter#accept(char) accept} as
+   *        stop characters.
+   * @param maxLength the (maximum) length of the characters to consume.
+   * @return the {@link String} with all consumed characters excluding the stop character. If no {@code stop} character
+   *         was found until {@code maxLength} characters have been consumed, this method behaves like {@link #read(int)
+   *         read(maxLength)}.
+   * @see #read(int)
+   * @see #readWhile(CharFilter, int)
+   * @see #peekUntil(CharFilter, int)
+   */
+  default String readUntil(CharFilter stopFilter, int maxLength) {
+
+    return readWhile(stopFilter.negate(), maxLength);
+  }
 
   /**
    * This method reads all {@link #next() next characters} that are {@link CharFilter#accept(char) accepted} by the
