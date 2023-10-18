@@ -506,7 +506,6 @@ public interface CharStreamScanner extends TextFormatProcessor {
 
   /**
    * @param radixMode the {@link CharScannerRadixHandler} - e.g. {@link CharScannerRadixMode#ALL}.
-   * @param noSign - {@code true} if no sign ('+' or '-')is accepted, {@code false} otherwise (read sign if present).
    * @return the consumed {@link Integer} value or {@code null} if no such value was present and the
    *         {@link #getPosition() position} remains unchanged.
    * @throws NumberFormatException if the current current position does not point to a {@link Long} value.
