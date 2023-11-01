@@ -12,7 +12,7 @@ import io.github.mmm.scanner.number.CharScannerRadixMode;
 /**
  * This is the interface for a scanner that can be used to parse a stream or sequence of characters.
  */
-public interface CharStreamScanner extends TextFormatProcessor {
+public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
 
   /**
    * The NULL character {@code '\0'} used to indicate the end of stream (EOS).<br>
@@ -1161,5 +1161,9 @@ public interface CharStreamScanner extends TextFormatProcessor {
    *         buffer. May be used for debugging or error messages.
    */
   String getBufferToParse();
+
+  @Override
+  // no checked exception!
+  void close();
 
 }

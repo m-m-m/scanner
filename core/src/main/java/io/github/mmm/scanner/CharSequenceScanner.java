@@ -496,4 +496,10 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
     return this.string;
   }
 
+  @Override
+  public void close() {
+
+    this.buffer = null;
+  }
+
 }

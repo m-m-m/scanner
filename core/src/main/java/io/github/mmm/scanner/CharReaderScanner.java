@@ -296,8 +296,12 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
     this.lookaheadLimit = 0;
   }
 
-  private void close() {
+  @Override
+  public void close() {
 
+    if (this.reader == null) {
+      return;
+    }
     try {
       this.reader.close();
     } catch (IOException e) {
