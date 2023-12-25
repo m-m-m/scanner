@@ -305,17 +305,20 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
   /**
    * @param stopFilter the {@link CharFilter} that decides which characters to {@link CharFilter#accept(char) accept} as
    *        stop characters.
-   * @param maxLength the (maximum) length of the characters to consume.
+   * @param min the minimum number of characters expected.
+   * @param max the (maximum) length of the characters to consume.
    * @return the {@link String} with all consumed characters excluding the stop character. If no {@code stop} character
    *         was found until {@code maxLength} characters have been consumed, this method behaves like {@link #read(int)
    *         read(maxLength)}.
+   * @throws IllegalStateException if less than the minimum number of characters have been
+   *         {@link CharFilter#accept(char) rejected}.
    * @see #read(int)
-   * @see #readWhile(CharFilter, int)
+   * @see #readWhile(CharFilter, int, int)
    * @see #peekUntil(CharFilter, int)
    */
-  default String readUntil(CharFilter stopFilter, int maxLength) {
+  default String readUntil(CharFilter stopFilter, int min, int max) {
 
-    return readWhile(stopFilter.negate(), maxLength);
+    return readWhile(stopFilter.negate(), min, max);
   }
 
   /**
@@ -326,13 +329,13 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
    *
    * @see #skipWhile(CharFilter)
    *
-   * @param filter is used to {@link CharFilter#accept(char) decide} which characters should be accepted.
+   * @param filter used to {@link CharFilter#accept(char) decide} which characters should be accepted.
    * @return a string with all characters {@link CharFilter#accept(char) accepted} by the given {@code filter}. Will be
    *         the empty string if no character was accepted.
    */
   default String readWhile(CharFilter filter) {
 
-    return readWhile(filter, Integer.MAX_VALUE);
+    return readWhile(filter, 0, Integer.MAX_VALUE);
   }
 
   /**
@@ -345,13 +348,16 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
    *
    * @see #skipWhile(char)
    *
-   * @param filter is used to {@link CharFilter#accept(char) decide} which characters should be accepted.
-   * @param max is the maximum number of characters that should be read.
+   * @param filter used to {@link CharFilter#accept(char) decide} which characters should be accepted.
+   * @param min the minimum number of characters expected.
+   * @param max the maximum number of characters that should be read.
    * @return a string with all characters {@link CharFilter#accept(char) accepted} by the given {@code filter} limited
    *         to the length of {@code max} and the {@link #hasNext() end} of this scanner. Will be the empty string if no
    *         character was accepted.
+   * @throws IllegalStateException if less than the minimum number of characters have been
+   *         {@link CharFilter#accept(char) accepted}.
    */
-  String readWhile(CharFilter filter, int max);
+  String readWhile(CharFilter filter, int min, int max);
 
   /**
    * @return a {@link String} with the data until the end of the current line or the end of the data. Will be

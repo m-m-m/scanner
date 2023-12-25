@@ -712,12 +712,12 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     // then
     assertThat(scanner.readWhile(textFilter)).isEqualTo("abc");
     assertThat(scanner.readWhile(textFilter)).isEmpty();
-    assertThat(scanner.readWhile(textFilter, 0)).isEmpty();
+    assertThat(scanner.readWhile(textFilter, 0, 0)).isEmpty();
     assertThat(scanner.readWhile(spaceFilter)).isEqualTo(" ");
     assertThat(scanner.readWhile(textFilter)).isEqualTo("def");
     assertThat(scanner.readWhile(spaceFilter)).isEqualTo("  ");
-    assertThat(scanner.readWhile(textFilter, 2)).isEqualTo("gh");
-    assertThat(scanner.readWhile(textFilter, 2)).isEqualTo("i");
+    assertThat(scanner.readWhile(textFilter, 0, 2)).isEqualTo("gh");
+    assertThat(scanner.readWhile(textFilter, 0, 2)).isEqualTo("i");
     assertThat(scanner.hasNext()).isFalse();
     assertThat(scanner.getPosition()).isEqualTo(12);
     assertThat(scanner.getColumn()).isEqualTo(13);

@@ -470,7 +470,7 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
   }
 
   @Override
-  public String readWhile(CharFilter filter, int max) {
+  public String readWhile(CharFilter filter, int min, int max) {
 
     int currentPos = this.offset;
     int len = skipWhile(filter, max);

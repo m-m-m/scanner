@@ -1417,10 +1417,13 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
   }
 
   @Override
-  public String readWhile(CharFilter filter, int max) {
+  public String readWhile(CharFilter filter, int min, int max) {
 
     if (max < 0) {
       throw new IllegalArgumentException("Max must NOT be negative: " + max);
+    }
+    if (max < min) {
+      throw new IllegalArgumentException("Min (" + min + ") must be less or requal to max (" + max + ")");
     }
     StringBuilder builder = null;
     if (this.offset >= this.limit) {
@@ -1439,7 +1442,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
       while (this.offset < end) {
         char c = this.buffer[this.offset];
         if (!filter.accept(c)) {
-          return getAppended(builder, start, this.offset);
+          return requireMin(getAppended(builder, start, this.offset), min, filter);
         }
         handleChar(c);
         this.offset++;
@@ -1448,9 +1451,28 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
       remain -= len;
       builder = append(builder, start, this.offset);
       if ((remain == 0) || !fill()) {
-        return eot(builder, true);
+        return requireMin(eot(builder, true), min, filter);
       }
     }
+  }
+
+  /**
+   * @param actual the actual number of characters.
+   * @param min the minimum number of characters required.
+   * @param filter the {@link CharFilter} that was used.
+   */
+  protected void requireMin(int actual, int min, CharFilter filter) {
+
+    if (actual < min) {
+      throw new IllegalStateException(
+          "Required at least " + min + " character(s) (" + filter.getDescription() + ") but found only " + actual);
+    }
+  }
+
+  private String requireMin(String result, int min, CharFilter filter) {
+
+    requireMin(result.length(), min, filter);
+    return result;
   }
 
   /**
