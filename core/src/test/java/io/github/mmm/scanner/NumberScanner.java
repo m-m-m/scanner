@@ -62,14 +62,14 @@ abstract class NumberScanner<N extends Number & Comparable<N>> extends Assertion
       // System.out.println(0xAB.CDP+1D);
       // System.out.println(Double.parseDouble("0xAB.CDP+1D"));
       // System.out.println(34.36015625E+1D);
-      N n12345 = this.type.valueOf("34.36015625E+1");
+      N n12345 = this.type.parse("34.36015625E+1");
       checkRadix("34.36015625e+1", n12345);
       checkRadix("0xAB.CDP+1", n12345);
       // double d = 0b0111101;
       double d2 = 0x01.23456789ABCDEP+10D;
       // TODO
     } else {
-      N n123 = this.type.valueOf("123");
+      N n123 = this.type.parse("123");
       checkRadix("123", n123);
       checkRadix("0b01111011", n123);
       checkRadix("0x7b", n123);
@@ -133,7 +133,7 @@ abstract class NumberScanner<N extends Number & Comparable<N>> extends Assertion
     N javaNumber = null;
     NumberFormatException javaError = null;
     try {
-      javaNumber = this.type.valueOf(number);
+      javaNumber = this.type.parse(number);
     } catch (NumberFormatException e) {
       javaError = e;
     }
