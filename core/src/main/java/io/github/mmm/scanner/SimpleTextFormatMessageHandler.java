@@ -56,8 +56,23 @@ public class SimpleTextFormatMessageHandler extends AbstractTextFormatMessageHan
     }
     Level level = this.logLevelMapper.apply(message.getType());
     if (level != null) {
-      this.logger.atLevel(level).log("At line {} in column {}: {}", message.getLine(), message.getColumn(),
-          message.getText());
+      String logMsg = "At line {} in column {}: {}";
+      // Workaround for https://github.com/konsoletyper/teavm/issues/918
+      // this.logger.atLevel(level).log(logMsg, message.getLine(), message.getColumn(), message.getText());
+      switch (level) {
+        case INFO:
+          this.logger.info(logMsg, message.getLine(), message.getColumn(), message.getText());
+          break;
+        case WARN:
+          this.logger.warn(logMsg, message.getLine(), message.getColumn(), message.getText());
+          break;
+        case ERROR:
+          this.logger.error(logMsg, message.getLine(), message.getColumn(), message.getText());
+          break;
+        default:
+          this.logger.warn(logMsg, message.getLine(), message.getColumn(), message.getText());
+          break;
+      }
     }
   }
 
