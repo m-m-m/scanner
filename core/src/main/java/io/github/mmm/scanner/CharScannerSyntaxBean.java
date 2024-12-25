@@ -7,31 +7,31 @@ package io.github.mmm.scanner;
  * The actual {@code char}s like {@link #getEscape() escape} are realized as simple bean-properties and initialized with
  * <code>'\0'</code> so they are disabled by default.
  *
- * @see CharStreamScanner#readUntil(char, boolean, CharScannerSyntax)
+ * @see CharStreamScanner#readUntil(int, boolean, CharScannerSyntax)
  */
 public class CharScannerSyntaxBean implements CharScannerSyntax {
 
-  private char escape;
+  private int escape;
 
-  private char quoteStart;
+  private int quoteStart;
 
-  private char quoteEnd;
+  private int quoteEnd;
 
-  private char quoteEscape;
+  private int quoteEscape;
 
   private boolean quoteEscapeLazy;
 
-  private char altQuoteStart;
+  private int altQuoteStart;
 
-  private char altQuoteEnd;
+  private int altQuoteEnd;
 
-  private char altQuoteEscape;
+  private int altQuoteEscape;
 
   private boolean altQuoteEscapeLazy;
 
-  private char entityStart;
+  private int entityStart;
 
-  private char entityEnd;
+  private int entityEnd;
 
   /**
    * The constructor.
@@ -45,7 +45,7 @@ public class CharScannerSyntaxBean implements CharScannerSyntax {
   }
 
   @Override
-  public char getEscape() {
+  public int getEscape() {
 
     return this.escape;
   }
@@ -53,13 +53,13 @@ public class CharScannerSyntaxBean implements CharScannerSyntax {
   /**
    * @param escape is the {@link #getEscape() escape} to set.
    */
-  public void setEscape(char escape) {
+  public void setEscape(int escape) {
 
     this.escape = escape;
   }
 
   @Override
-  public char getQuoteStart() {
+  public int getQuoteStart() {
 
     return this.quoteStart;
   }
@@ -67,13 +67,13 @@ public class CharScannerSyntaxBean implements CharScannerSyntax {
   /**
    * @param quoteStart is the {@link #getQuoteStart() quoteStart} to set.
    */
-  public void setQuoteStart(char quoteStart) {
+  public void setQuoteStart(int quoteStart) {
 
     this.quoteStart = quoteStart;
   }
 
   @Override
-  public char getQuoteEnd() {
+  public int getQuoteEnd() {
 
     return this.quoteEnd;
   }
@@ -81,7 +81,7 @@ public class CharScannerSyntaxBean implements CharScannerSyntax {
   /**
    * @param quoteEnd is the {@link #getQuoteEnd() quoteEnd} to set.
    */
-  public void setQuoteEnd(char quoteEnd) {
+  public void setQuoteEnd(int quoteEnd) {
 
     this.quoteEnd = quoteEnd;
   }
@@ -91,14 +91,14 @@ public class CharScannerSyntaxBean implements CharScannerSyntax {
    *
    * @param quote the quote character to set.
    */
-  public void setQuote(char quote) {
+  public void setQuote(int quote) {
 
     this.quoteStart = quote;
     this.quoteEnd = quote;
   }
 
   @Override
-  public char getQuoteEscape() {
+  public int getQuoteEscape() {
 
     return this.quoteEscape;
   }
@@ -106,7 +106,7 @@ public class CharScannerSyntaxBean implements CharScannerSyntax {
   /**
    * @param quoteEscape is the {@link #getQuoteEnd() quote-escape} to set.
    */
-  public void setQuoteEscape(char quoteEscape) {
+  public void setQuoteEscape(int quoteEscape) {
 
     this.quoteEscape = quoteEscape;
   }
@@ -125,17 +125,8 @@ public class CharScannerSyntaxBean implements CharScannerSyntax {
     this.quoteEscapeLazy = quoteEscapeLazy;
   }
 
-  /**
-   * This method gets the alternative character used to start a quotation that should be terminated by a
-   * {@link #getAltQuoteEnd() alt-quote-end} character. The text inside the quote is taken as is (without the quote
-   * characters).
-   *
-   * @see #getQuoteStart()
-   *
-   * @return the alternative character used to start a quotation or {@code '\0'} for no quotation.
-   */
   @Override
-  public char getAltQuoteStart() {
+  public int getAltQuoteStart() {
 
     return this.altQuoteStart;
   }
@@ -143,20 +134,13 @@ public class CharScannerSyntaxBean implements CharScannerSyntax {
   /**
    * @param alternativeQuoteStart is the {@link #getAltQuoteStart() alt-quote-start} character to set.
    */
-  public void setAltQuoteStart(char alternativeQuoteStart) {
+  public void setAltQuoteStart(int alternativeQuoteStart) {
 
     this.altQuoteStart = alternativeQuoteStart;
   }
 
-  /**
-   * This method gets the alternative character used to end a quotation.
-   *
-   * @see #getAltQuoteStart()
-   *
-   * @return the alternative character used to end a quotation.
-   */
   @Override
-  public char getAltQuoteEnd() {
+  public int getAltQuoteEnd() {
 
     return this.altQuoteEnd;
   }
@@ -166,7 +150,7 @@ public class CharScannerSyntaxBean implements CharScannerSyntax {
    *
    * @param alternativeQuoteEnd is the {@link #getAltQuoteEnd() alt-quote-end} character.
    */
-  public void setAltQuoteEnd(char alternativeQuoteEnd) {
+  public void setAltQuoteEnd(int alternativeQuoteEnd) {
 
     this.altQuoteEnd = alternativeQuoteEnd;
   }
@@ -177,14 +161,14 @@ public class CharScannerSyntaxBean implements CharScannerSyntax {
    *
    * @param altQuote the alt-quote character to set.
    */
-  public void setAltQuote(char altQuote) {
+  public void setAltQuote(int altQuote) {
 
     this.altQuoteStart = altQuote;
     this.altQuoteEnd = altQuote;
   }
 
   @Override
-  public char getAltQuoteEscape() {
+  public int getAltQuoteEscape() {
 
     return this.altQuoteEscape;
   }
@@ -192,7 +176,7 @@ public class CharScannerSyntaxBean implements CharScannerSyntax {
   /**
    * @param altQuoteEscape is the {@link #getAltQuoteEscape() alt-quote-escape} to set.
    */
-  public void setAltQuoteEscape(char altQuoteEscape) {
+  public void setAltQuoteEscape(int altQuoteEscape) {
 
     this.altQuoteEscape = altQuoteEscape;
   }
@@ -212,7 +196,7 @@ public class CharScannerSyntaxBean implements CharScannerSyntax {
   }
 
   @Override
-  public char getEntityStart() {
+  public int getEntityStart() {
 
     return this.entityStart;
   }
@@ -220,13 +204,13 @@ public class CharScannerSyntaxBean implements CharScannerSyntax {
   /**
    * @param entityStart the {@link #getEntityStart() entity-start} to set.
    */
-  public void setEntityStart(char entityStart) {
+  public void setEntityStart(int entityStart) {
 
     this.entityStart = entityStart;
   }
 
   @Override
-  public char getEntityEnd() {
+  public int getEntityEnd() {
 
     return this.entityEnd;
   }
@@ -234,16 +218,15 @@ public class CharScannerSyntaxBean implements CharScannerSyntax {
   /**
    * @param entityEnd the {@link #getEntityEnd() entity-end} to set.
    */
-  public void setEntityEnd(char entityEnd) {
+  public void setEntityEnd(int entityEnd) {
 
     this.entityEnd = entityEnd;
   }
 
   /**
-   * {@inheritDoc}
-   *
+   * {@inheritDoc} <br>
    * <b>ATTENTION:</b><br>
-   * You need to override this method if you want to {@link #setEntityStart(char) use} entities.
+   * You need to override this method if you want to {@link #setEntityStart(int) use} entities.
    */
   @Override
   public String resolveEntity(String entity) {

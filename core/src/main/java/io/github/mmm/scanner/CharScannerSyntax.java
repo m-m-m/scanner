@@ -5,7 +5,7 @@ package io.github.mmm.scanner;
 /**
  * This is the interface used to define the syntax to scan characters.
  *
- * @see CharStreamScanner#readUntil(char, boolean, CharScannerSyntax)
+ * @see CharStreamScanner#readUntil(int, boolean, CharScannerSyntax)
  */
 public interface CharScannerSyntax {
 
@@ -16,7 +16,7 @@ public interface CharScannerSyntax {
    *
    * @return the character used to start a quotation or {@code '\0'} to disable.
    */
-  char getQuoteStart();
+  int getQuoteStart();
 
   /**
    * This method gets the character used to end a quotation.
@@ -25,7 +25,7 @@ public interface CharScannerSyntax {
    *
    * @return the character used to end a quotation or {@code '\0'} to disable.
    */
-  char getQuoteEnd();
+  int getQuoteEnd();
 
   /**
    * This method gets the character used as escape. It is used to mark special characters like {@link #getQuoteStart()}
@@ -51,9 +51,9 @@ public interface CharScannerSyntax {
    * </tr>
    * </table>
    *
-   * This allows to encode special characters like a
-   * {@link CharStreamScanner#readUntil(char, boolean, CharScannerSyntax) stop-character}, {@link #getQuoteStart()
-   * quote-start}, {@link #getAltQuoteStart() alt-quote-start}, as well as the {@link #getEscape() escape} itself. <br>
+   * This allows to encode special characters like a {@link CharStreamScanner#readUntil(int, boolean, CharScannerSyntax)
+   * stop-character}, {@link #getQuoteStart() quote-start}, {@link #getAltQuoteStart() alt-quote-start}, as well as the
+   * {@link #getEscape() escape} itself. <br>
    * <b>ATTENTION:</b><br>
    * The {@link #getEscape() escape} is disabled within {@link #getQuoteStart() quotations}.
    *
@@ -61,7 +61,7 @@ public interface CharScannerSyntax {
    *
    * @return the escape character or {@code '\0'} for no escaping.
    */
-  char getEscape();
+  int getEscape();
 
   /**
    * This method gets the character used to escape the {@link #getQuoteEnd() quote-end} character within a quotation.
@@ -103,7 +103,7 @@ public interface CharScannerSyntax {
    *
    * @return the character used to escape the {@link #getQuoteEnd() quote-end} character or {@code '\0'} to disable.
    */
-  char getQuoteEscape();
+  int getQuoteEscape();
 
   /**
    * If {@link #getQuoteStart() quote-start}, {@link #getQuoteEnd() quote-end} and {@link #getQuoteEscape()
@@ -187,7 +187,7 @@ public interface CharScannerSyntax {
    *
    * @return the alternative character used to start a quotation or {@code '\0'} to disable.
    */
-  char getAltQuoteStart();
+  int getAltQuoteStart();
 
   /**
    * This method gets the alternative character used to end a quotation.
@@ -196,7 +196,7 @@ public interface CharScannerSyntax {
    *
    * @return the alternative character used to end a quotation.
    */
-  char getAltQuoteEnd();
+  int getAltQuoteEnd();
 
   /**
    * This method gets the character used to escape the {@link #getAltQuoteEnd() alt-quote-end} character within an
@@ -206,7 +206,7 @@ public interface CharScannerSyntax {
    *
    * @return the character used to escape the {@link #getQuoteEnd() quote-end} character or {@code '\0'} to disable.
    */
-  char getAltQuoteEscape();
+  int getAltQuoteEscape();
 
   /**
    * If {@link #getAltQuoteStart() alt-quote-start}, {@link #getAltQuoteEnd() alt-quote-end} and
@@ -226,7 +226,7 @@ public interface CharScannerSyntax {
    *
    * @return the character used to start an entity or {@code '\0'} to disable.
    */
-  char getEntityStart();
+  int getEntityStart();
 
   /**
    * This method gets the character used to end an entity.
@@ -235,7 +235,7 @@ public interface CharScannerSyntax {
    *
    * @return the character used to end an entity.
    */
-  char getEntityEnd();
+  int getEntityEnd();
 
   /**
    * This method resolves the given {@code entity}. <br>

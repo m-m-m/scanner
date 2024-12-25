@@ -25,7 +25,7 @@ public interface CharScannerNumberParser extends CharScannerRadixHandler {
    * @return {@code true} if the given digit is accepted, {@code false} otherwise (exceeds the range of the number to
    *         parse and the digit should not be consumed). Typical implementations should always return {@code true}.
    */
-  boolean digit(int digit, char digitChar);
+  boolean digit(int digit, int digitChar);
 
   /**
    * @return {@code true} if the decimal dot ('.') shall be accepted, {@code false} otherwise (stop further processing
@@ -47,16 +47,17 @@ public interface CharScannerNumberParser extends CharScannerRadixHandler {
    * special numbers such as "NaN" or "Infinity". So for 'N' it can return "NaN" and for 'I' it can return "Infinity" to
    * support these special numbers. For a delimiter it can return @{@code other}. Otherwise return {@code null} here.
    *
-   * @param other the special charater that was found (no digit, no dot, no exponent).
+   * @param other the special charater {@link String#codePointAt(int) code-point} that was found (no digit, no dot, no
+   *        exponent).
    * @return {@code null} to stop without consuming the given character or a {@link String} that is expected (and shall
    *         start with the given special character). If that {@link String} was found in the scanner,
    *         {@link #special(String)} is called. Otherwise again not even the given characters gets consumed.
    */
-  String special(char other);
+  String special(int other);
 
   /**
    * @param special the special {@link String} that was found and consumed.
-   * @see #special(char)
+   * @see #special(int)
    */
   void special(String special);
 

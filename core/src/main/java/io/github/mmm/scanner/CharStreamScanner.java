@@ -10,7 +10,10 @@ import io.github.mmm.scanner.number.CharScannerRadixHandler;
 import io.github.mmm.scanner.number.CharScannerRadixMode;
 
 /**
- * This is the interface for a scanner that can be used to parse a stream or sequence of characters.
+ * This is the interface for a scanner that can be used to parse a stream or sequence of character
+ * {@link String#codePointAt(int) code-points}. It allows easy but efficient parsing of arbitrary textual data.<br>
+ * <b>ATTENTION:</b><br>
+ * Implementations are state-ful and NOT thread-safe (intended by design).
  */
 public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
 
@@ -21,7 +24,7 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
    * @see #next()
    * @see #peek()
    */
-  char EOS = '\0';
+  int EOS = '\0';
 
   /**
    * This method determines if there is at least one more character available.
@@ -37,9 +40,10 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
    * stream may contain the NUL character ('\0') you can not distinguish if the end of the stream was reached or you
    * actually read the NUL character.
    *
-   * @return the {@link #next()} character or {@link #EOS} if none is {@link #hasNext() available}.
+   * @return the next {@link String#codePointAt(int) code-point} or {@link #EOS} if none is {@link #hasNext()
+   *         available}.
    */
-  char next();
+  int next();
 
   /**
    * This method reads the current character without {@link #next() consuming} characters and will therefore not change
@@ -47,7 +51,7 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
    *
    * @return the current character or {@link #EOS} if none is {@link #hasNext() available}.
    */
-  char peek();
+  int peek();
 
   /**
    * Like {@link #peek()} but with further lookahead.<br>
@@ -58,10 +62,10 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
    *
    * @param lookaheadOffset the lookahead offset. If {@code 0} this method will behave like {@link #peek()}. In case of
    *        {@code 1} it will return the character after the next one and so forth.
-   * @return the {@link #peek() peeked} character at the given {@code lookaheadOffset} or {@link #EOS} if no such
-   *         character exists.
+   * @return the {@link #peek() peeked} {@link String#codePointAt(int) code-point} at the given {@code lookaheadOffset}
+   *         or {@link #EOS} if no such character exists.
    */
-  char peek(int lookaheadOffset);
+  int peek(int lookaheadOffset);
 
   /**
    * This method peeks the number of {@link #peek() next characters} given by {@code count} and returns them as
@@ -81,10 +85,10 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
   String peekString(int count);
 
   /**
-   * @param filter the {@link CharFilter} {@link CharFilter#accept(char) accepting} only the characters to peek.
+   * @param filter the {@link CharFilter} {@link CharFilter#accept(int) accepting} only the characters to peek.
    * @param maxLen the maximum number of characters to peek (to get as lookahead without modifying this stream).
    * @return a {@link String} with the {@link #peek() peeked} characters of the given {@code maxLen} or less if a
-   *         character was hit that is <em>not</em> {@link CharFilter#accept(char) accepted} by the given {@code filter}
+   *         character was hit that is <em>not</em> {@link CharFilter#accept(int) accepted} by the given {@code filter}
    *         or the end-of-text has been reached before. The state of this stream remains unchanged.
    * @see #readWhile(CharFilter)
    * @see #skip(int)
@@ -92,7 +96,7 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
   String peekWhile(CharFilter filter, int maxLen);
 
   /**
-   * @param stopFilter the {@link CharFilter} that decides which characters to {@link CharFilter#accept(char) accept} as
+   * @param stopFilter the {@link CharFilter} that decides which characters to {@link CharFilter#accept(int) accept} as
    *        stop characters.
    * @param maxLen the maximum number of characters to peek (get as lookahead without modifying this stream).
    * @return a {@link String} with the {@link #peek() peeked} characters of the given {@code maxLen} or less if a stop
@@ -147,12 +151,12 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
    * @return the string with all read characters excluding the {@code stop} character or {@code null} if there was no
    *         {@code stop} character and {@code acceptEnd} is {@code false}.
    */
-  String readUntil(char stop, boolean acceptEnd);
+  String readUntil(int stop, boolean acceptEnd);
 
   /**
    * This method reads all {@link #next() next characters} until the given (un-escaped) {@code stop} character or the
    * end is reached. <br>
-   * In advance to {@link #readUntil(char, boolean)}, this method allows that the {@code stop} character may be used in
+   * In advance to {@link #readUntil(int, boolean)}, this method allows that the {@code stop} character may be used in
    * the input-string by adding the given {@code escape} character. After the call of this method, the current index
    * will point to the next character after the (first) {@code stop} character or to the end if NO such character
    * exists. <br>
@@ -161,72 +165,72 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
    * <pre>
    * {@link CharStreamScanner} scanner = getScanner();
    * doSomething();
-   * char c = scanner.{@link #next()};
-   * if ((c == '"') || (c == '\'')) {
-   *   char escape = c; // may also be something like '\\'
-   *   String quote = scanner.{@link #readUntil(char, boolean, char) readUntil}(c, false, escape)
+   * int cp = scanner.{@link #next()};
+   * if ((cp == '"') || (cp == '\'')) {
+   *   int escape = cp; // may also be something like '\\'
+   *   String quote = scanner.{@link #readUntil(int, boolean, int) readUntil}(c, false, escape)
    * } else {
    *   doOtherThings();
    * }
    * </pre>
    *
-   * @param stop is the character to read until.
+   * @param stop is the {@link String#codePointAt(int) code-point} to read until.
    * @param acceptEnd if {@code true} the end of data will be treated as {@code stop}, too.
-   * @param escape is the character used to escape the {@code stop} character. To add an occurrence of the
-   *        {@code escape} character it has to be duplicated (occur twice). The {@code escape} character may also be
-   *        equal to the {@code stop} character. If other regular characters are escaped the {@code escape} character is
-   *        simply ignored.
+   * @param escape is the {@link String#codePointAt(int) code-point} used to escape the {@code stop} character. To add
+   *        an occurrence of the {@code escape} character it has to be duplicated (occur twice). The {@code escape}
+   *        character may also be equal to the {@code stop} character. If other regular characters are escaped the
+   *        {@code escape} character is simply ignored.
    * @return the string with all read characters excluding the {@code stop} character or {@code null} if there was no
    *         {@code stop} character and {@code acceptEnd} is {@code false}.
    */
-  String readUntil(char stop, boolean acceptEnd, char escape);
+  String readUntil(int stop, boolean acceptEnd, int escape);
 
   /**
    * This method reads all {@link #next() next characters} until the given {@code stop} character or the end of the
-   * string to parse is reached. In advance to {@link #readUntil(char, boolean)}, this method will scan the input using
+   * string to parse is reached. In advance to {@link #readUntil(int, boolean)}, this method will scan the input using
    * the given {@code syntax} which e.g. allows to {@link CharScannerSyntax#getEscape() escape} the stop character. <br>
    * After the call of this method, the current index will point to the next character after the (first) {@code stop}
    * character or to the end of the string if NO such character exists.
    *
-   * @param stop is the character to read until.
+   * @param stop is the {@link String#codePointAt(int) code-point} to read until.
    * @param acceptEnd if {@code true} the end of data will be treated as {@code stop}, too.
    * @param syntax contains the characters specific for the syntax to read.
    * @return the string with all read characters excluding the {@code stop} character or {@code null} if there was no
    *         {@code stop} character.
    * @see #readUntil(CharFilter, boolean, CharScannerSyntax)
    */
-  String readUntil(char stop, boolean acceptEnd, CharScannerSyntax syntax);
+  String readUntil(int stop, boolean acceptEnd, CharScannerSyntax syntax);
 
   /**
-   * This method reads all {@link #next() next characters} until the first character {@link CharFilter#accept(char)
+   * This method reads all {@link #next() next characters} until the first character {@link CharFilter#accept(int)
    * accepted} by the given {@code filter} or the end is reached. <br>
-   * After the call of this method, the current index will point to the first {@link CharFilter#accept(char) accepted}
+   * After the call of this method, the current index will point to the first {@link CharFilter#accept(int) accepted}
    * stop character or to the end if NO such character exists.
    *
-   * @param filter is used to {@link CharFilter#accept(char) decide} where to stop.
+   * @param filter is used to {@link CharFilter#accept(int) decide} where to stop.
    * @param acceptEnd if {@code true} if end of data should be treated like the {@code stop} character and the rest of
    *        the text will be returned, {@code false} otherwise (to return {@code null} if the end of data was reached
    *        and the scanner has been consumed).
-   * @return the string with all read characters not {@link CharFilter#accept(char) accepted} by the given
-   *         {@link CharFilter} or {@code null} if there was no {@link CharFilter#accept(char) accepted} character and
+   * @return the string with all read characters not {@link CharFilter#accept(int) accepted} by the given
+   *         {@link CharFilter} or {@code null} if there was no {@link CharFilter#accept(int) accepted} character and
    *         {@code acceptEnd} is {@code false}.
    */
   String readUntil(CharFilter filter, boolean acceptEnd);
 
   /**
-   * This method reads all {@link #next() next characters} until the first character {@link CharFilter#accept(char)
+   * This method reads all {@link #next() next characters} until the first character {@link CharFilter#accept(int)
    * accepted} by the given {@code filter}, the given {@code stop} {@link String} or the end is reached. <br>
-   * After the call of this method, the current index will point to the first {@link CharFilter#accept(char) accepted}
+   * After the call of this method, the current index will point to the first {@link CharFilter#accept(int) accepted}
    * stop character, or to the first character of the given {@code stop} {@link String} or to the end if NO such
    * character exists.
    *
-   * @param filter is used to {@link CharFilter#accept(char) decide} where to stop.
+   * @param filter is used to {@link CharFilter#accept(int) decide} where to stop.
    * @param acceptEnd if {@code true} if the end of data should be treated like the {@code stop} character and the rest
    *        of the text will be returned, {@code false} otherwise (to return {@code null} if end of data was reached and
    *        the scanner has been consumed).
    * @param stop the {@link String} where to stop consuming data. Should be at least two characters long (otherwise
    *        accept by {@link CharFilter} instead).
-   * @return the string with all read characters not {@link CharFilter#accept(char) accepted} by the given
+   * @return the string with all read characters not {@link CharFilter#accept(int) accepted} by the given
    *         {@link CharFilter} or until the given {@code stop} {@link String} was detected. If end of data was reached
    *         without a stop signal the entire rest of the data is returned or {@code null} if {@code acceptEnd} is
    *         {@code false}.
@@ -237,13 +241,13 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
   }
 
   /**
-   * This method reads all {@link #next() next characters} until the first character {@link CharFilter#accept(char)
+   * This method reads all {@link #next() next characters} until the first character {@link CharFilter#accept(int)
    * accepted} by the given {@code filter}, the given {@code stop} {@link String} or the end is reached. <br>
-   * After the call of this method, the current index will point to the first {@link CharFilter#accept(char) accepted}
+   * After the call of this method, the current index will point to the first {@link CharFilter#accept(int) accepted}
    * stop character, or to the first character of the given {@code stop} {@link String} or to the end if NO such
    * character exists.
    *
-   * @param filter is used to {@link CharFilter#accept(char) decide} where to stop.
+   * @param filter is used to {@link CharFilter#accept(int) decide} where to stop.
    * @param acceptEnd if {@code true} if the end of data should be treated like the {@code stop} character and the rest
    *        of the text will be returned, {@code false} otherwise (to return {@code null} if the end of data was reached
    *        and the scanner has been consumed).
@@ -251,7 +255,7 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
    *        accept by {@link CharFilter} instead).
    * @param ignoreCase - if {@code true} the case of the characters is ignored when compared with characters from
    *        {@code stop} {@link String}.
-   * @return the string with all read characters not {@link CharFilter#accept(char) accepted} by the given
+   * @return the string with all read characters not {@link CharFilter#accept(int) accepted} by the given
    *         {@link CharFilter} or until the given {@code stop} {@link String} was detected. If the end of data was
    *         reached without a stop signal the entire rest of the data is returned or {@code null} if {@code acceptEnd}
    *         is {@code false}.
@@ -262,13 +266,13 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
   }
 
   /**
-   * This method reads all {@link #next() next characters} until the first character {@link CharFilter#accept(char)
+   * This method reads all {@link #next() next characters} until the first character {@link CharFilter#accept(int)
    * accepted} by the given {@code filter}, the given {@code stop} {@link String} or the end is reached. <br>
-   * After the call of this method, the current index will point to the first {@link CharFilter#accept(char) accepted}
+   * After the call of this method, the current index will point to the first {@link CharFilter#accept(int) accepted}
    * stop character, or to the first character of the given {@code stop} {@link String} or to the end if NO such
    * character exists.
    *
-   * @param filter is used to {@link CharFilter#accept(char) decide} where to stop.
+   * @param filter is used to {@link CharFilter#accept(int) decide} where to stop.
    * @param acceptEnd if {@code true} if the end of data should be treated like the {@code stop} character and the rest
    *        of the text will be returned, {@code false} otherwise (to return {@code null} if the end of data was reached
    *        and the scanner has been consumed).
@@ -277,7 +281,7 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
    * @param ignoreCase - if {@code true} the case of the characters is ignored when compared with characters from
    *        {@code stop} {@link String}.
    * @param trim - {@code true} if the result should be {@link String#trim() trimmed}, {@code false} otherwise.
-   * @return the string with all read characters not {@link CharFilter#accept(char) accepted} by the given
+   * @return the string with all read characters not {@link CharFilter#accept(int) accepted} by the given
    *         {@link CharFilter} or until the given {@code stop} {@link String} was detected. If the end of data was
    *         reached without hitting {@code stop} the entire rest of the data is returned or {@code null} if
    *         {@code acceptEnd} is {@code false}. Thre result will be {@link String#trim() trimmed} if {@code trim} is
@@ -287,31 +291,31 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
 
   /**
    * This method reads all {@link #next() next characters} until the given {@link CharFilter}
-   * {@link CharFilter#accept(char) accepts} the current character as stop character or the end of data is reached. In
-   * advance to {@link #readUntil(char, boolean)}, this method will scan the input using the given {@code syntax} which
+   * {@link CharFilter#accept(int) accepts} the current character as stop character or the end of data is reached. In
+   * advance to {@link #readUntil(int, boolean)}, this method will scan the input using the given {@code syntax} which
    * e.g. allows to {@link CharScannerSyntax#getEscape() escape} the stop character. <br>
-   * After the call of this method, the current index will point to the first {@link CharFilter#accept(char) accepted}
+   * After the call of this method, the current index will point to the first {@link CharFilter#accept(int) accepted}
    * stop character or to the end of the string if NO such character exists.
    *
-   * @param filter is used to {@link CharFilter#accept(char) decide} where to stop.
+   * @param filter is used to {@link CharFilter#accept(int) decide} where to stop.
    * @param acceptEnd if {@code true} the end of data will be treated as {@code stop}, too.
    * @param syntax contains the characters specific for the syntax to read.
    * @return the string with all read characters excluding the {@code stop} character or {@code null} if there was no
    *         {@code stop} character.
-   * @see #readUntil(char, boolean, CharScannerSyntax)
+   * @see #readUntil(int, boolean, CharScannerSyntax)
    */
   String readUntil(CharFilter filter, boolean acceptEnd, CharScannerSyntax syntax);
 
   /**
-   * @param stopFilter the {@link CharFilter} that decides which characters to {@link CharFilter#accept(char) accept} as
+   * @param stopFilter the {@link CharFilter} that decides which characters to {@link CharFilter#accept(int) accept} as
    *        stop characters.
    * @param min the minimum number of characters expected.
    * @param max the (maximum) length of the characters to consume.
    * @return the {@link String} with all consumed characters excluding the stop character. If no {@code stop} character
    *         was found until {@code maxLength} characters have been consumed, this method behaves like {@link #read(int)
    *         read(maxLength)}.
-   * @throws IllegalStateException if less than the minimum number of characters have been
-   *         {@link CharFilter#accept(char) rejected}.
+   * @throws IllegalStateException if less than the minimum number of characters have been {@link CharFilter#accept(int)
+   *         rejected}.
    * @see #read(int)
    * @see #readWhile(CharFilter, int, int)
    * @see #peekUntil(CharFilter, int)
@@ -322,15 +326,15 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
   }
 
   /**
-   * This method reads all {@link #next() next characters} that are {@link CharFilter#accept(char) accepted} by the
-   * given {@code filter}. <br>
+   * This method reads all {@link #next() next characters} that are {@link CharFilter#accept(int) accepted} by the given
+   * {@code filter}. <br>
    * After the call of this method, the current index will point to the next character that was NOT
-   * {@link CharFilter#accept(char) accepted} by the given {@code filter} or to the end if NO such character exists.
+   * {@link CharFilter#accept(int) accepted} by the given {@code filter} or to the end if NO such character exists.
    *
    * @see #skipWhile(CharFilter)
    *
-   * @param filter used to {@link CharFilter#accept(char) decide} which characters should be accepted.
-   * @return a string with all characters {@link CharFilter#accept(char) accepted} by the given {@code filter}. Will be
+   * @param filter used to {@link CharFilter#accept(int) decide} which characters should be accepted.
+   * @return a string with all characters {@link CharFilter#accept(int) accepted} by the given {@code filter}. Will be
    *         the empty string if no character was accepted.
    */
   default String readWhile(CharFilter filter) {
@@ -339,23 +343,23 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
   }
 
   /**
-   * This method reads all {@link #next() next characters} that are {@link CharFilter#accept(char) accepted} by the
-   * given {@code filter}. <br>
+   * This method reads all {@link #next() next characters} that are {@link CharFilter#accept(int) accepted} by the given
+   * {@code filter}. <br>
    * After the call of this method, the current index will point to the next character that was NOT
-   * {@link CharFilter#accept(char) accepted} by the given {@code filter}. If the next {@code max} characters or the
-   * characters left until the {@link #hasNext() end} of this scanner are {@link CharFilter#accept(char) accepted}, only
+   * {@link CharFilter#accept(int) accepted} by the given {@code filter}. If the next {@code max} characters or the
+   * characters left until the {@link #hasNext() end} of this scanner are {@link CharFilter#accept(int) accepted}, only
    * that amount of characters are skipped.
    *
-   * @see #skipWhile(char)
+   * @see #skipWhile(int)
    *
-   * @param filter used to {@link CharFilter#accept(char) decide} which characters should be accepted.
+   * @param filter used to {@link CharFilter#accept(int) decide} which characters should be accepted.
    * @param min the minimum number of characters expected.
    * @param max the maximum number of characters that should be read.
-   * @return a string with all characters {@link CharFilter#accept(char) accepted} by the given {@code filter} limited
-   *         to the length of {@code max} and the {@link #hasNext() end} of this scanner. Will be the empty string if no
+   * @return a string with all characters {@link CharFilter#accept(int) accepted} by the given {@code filter} limited to
+   *         the length of {@code max} and the {@link #hasNext() end} of this scanner. Will be the empty string if no
    *         character was accepted.
-   * @throws IllegalStateException if less than the minimum number of characters have been
-   *         {@link CharFilter#accept(char) accepted}.
+   * @throws IllegalStateException if less than the minimum number of characters have been {@link CharFilter#accept(int)
+   *         accepted}.
    */
   String readWhile(CharFilter filter, int min, int max);
 
@@ -781,7 +785,7 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
    * @param expected is the expected character.
    * @return {@code true} if the current character is the same as {@code expected}, {@code false} otherwise.
    */
-  default boolean expectOne(char expected) {
+  default boolean expectOne(int expected) {
 
     return expectOne(expected, false);
   }
@@ -791,22 +795,22 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
    * If the character matched with the {@code expected} character, the parser points to the next character. Otherwise
    * its position will remain unchanged.
    *
-   * @param expected the character to expect as {@link #next() next} in this stream.
+   * @param expected the {@link String#codePointAt(int) code-point} to expect as {@link #next() next} in this stream.
    * @param warning {@code true} to {@link #addWarning(String) add a warning} in case the expected character was not
    *        present, {@code false} otherwise.
    * @return {@code true} if the expected character was found and consumer, {@code false} otherwise (and this stream
    *         remains unchanged).
    */
-  boolean expectOne(char expected, boolean warning);
+  boolean expectOne(int expected, boolean warning);
 
   /**
-   * This method checks that the {@link #next() next character} is {@link CharFilter#accept(char) accepted} by the given
+   * This method checks that the {@link #next() next character} is {@link CharFilter#accept(int) accepted} by the given
    * {@link CharFilter}. <br>
    * If the current character was as expected, the parser points to the next character. Otherwise its position will
    * remain unchanged.
    *
-   * @param expected is the {@link CharFilter} {@link CharFilter#accept(char) accepting} the expected chars.
-   * @return {@code true} if the current character is {@link CharFilter#accept(char) accepted}, {@code false} otherwise.
+   * @param expected is the {@link CharFilter} {@link CharFilter#accept(int) accepting} the expected chars.
+   * @return {@code true} if the current character is {@link CharFilter#accept(int) accepted}, {@code false} otherwise.
    */
   default boolean expectOne(CharFilter expected) {
 
@@ -875,15 +879,15 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
    * If the current character was as expected, the parser points to the next character. Otherwise an exception is thrown
    * indicating the problem.
    *
-   * @param expected is the expected character.
+   * @param expected is the expected {@link String#codePointAt(int) code-point}.
    * @throws IllegalStateException if the required character was not found.
    */
-  default void requireOne(char expected) throws IllegalStateException {
+  default void requireOne(int expected) throws IllegalStateException {
 
     if (!hasNext()) {
       throw new IllegalStateException("Expecting '" + expected + "' but found end-of-stream.");
     }
-    char next = peek();
+    int next = peek();
     if (next != expected) {
       throw new IllegalStateException("Expecting '" + expected + "' but found: " + next);
     }
@@ -907,10 +911,10 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
   void require(String expected, boolean ignoreCase);
 
   /**
-   * @param filter the {@link CharFilter} {@link CharFilter#accept(char) accepting} the expected characters to
+   * @param filter the {@link CharFilter} {@link CharFilter#accept(int) accepting} the expected characters to
    *        {@link #skipWhile(CharFilter, int) skip}.
    * @return the actual number of characters that have been skipped.
-   * @throws IllegalStateException if less than {@code 1} or more than {@code 1000} {@link CharFilter#accept(char)
+   * @throws IllegalStateException if less than {@code 1} or more than {@code 1000} {@link CharFilter#accept(int)
    *         accepted} characters have been consumed.
    */
   default int requireOne(CharFilter filter) {
@@ -919,10 +923,10 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
   }
 
   /**
-   * @param filter the {@link CharFilter} {@link CharFilter#accept(char) accepting} the expected characters to
+   * @param filter the {@link CharFilter} {@link CharFilter#accept(int) accepting} the expected characters to
    *        {@link #skipWhile(CharFilter, int) skip}.
    * @return the actual number of characters that have been skipped.
-   * @throws IllegalStateException if less than {@code 1} or more than {@code 1000} {@link CharFilter#accept(char)
+   * @throws IllegalStateException if less than {@code 1} or more than {@code 1000} {@link CharFilter#accept(int)
    *         accepted} characters have been consumed.
    */
   default int requireOneOrMore(CharFilter filter) {
@@ -931,11 +935,11 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
   }
 
   /**
-   * @param filter the {@link CharFilter} {@link CharFilter#accept(char) accepting} the expected characters to
+   * @param filter the {@link CharFilter} {@link CharFilter#accept(int) accepting} the expected characters to
    *        {@link #skipWhile(CharFilter, int) skip}.
    * @param min the minimum required number of skipped characters.
    * @return the actual number of characters that have been skipped.
-   * @throws IllegalStateException if less than {@code min} or more than {@code 1000} {@link CharFilter#accept(char)
+   * @throws IllegalStateException if less than {@code min} or more than {@code 1000} {@link CharFilter#accept(int)
    *         accepted} characters have been consumed.
    */
   default int require(CharFilter filter, int min) {
@@ -944,12 +948,12 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
   }
 
   /**
-   * @param filter the {@link CharFilter} {@link CharFilter#accept(char) accepting} the expected characters to
+   * @param filter the {@link CharFilter} {@link CharFilter#accept(int) accepting} the expected characters to
    *        {@link #skipWhile(CharFilter, int) skip}.
    * @param min the minimum required number of skipped characters.
    * @param max the maximum number of skipped characters.
    * @return the actual number of characters that have been skipped.
-   * @throws IllegalStateException if less than {@code min} or more than {@code max} {@link CharFilter#accept(char)
+   * @throws IllegalStateException if less than {@code min} or more than {@code max} {@link CharFilter#accept(int)
    *         accepted} characters have been consumed.
    */
   default int require(CharFilter filter, int min, int max) {
@@ -966,8 +970,8 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
       invalidCharCount("at least " + min, count, filter);
     }
     if (count == max) {
-      char c = peek();
-      if (!filter.accept(c)) {
+      int codePoint = peek();
+      if (!filter.accept(codePoint)) {
         invalidCharCount("up to " + max, count, filter);
       }
     }
@@ -985,27 +989,27 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
   }
 
   /**
-   * This method skips all {@link #next() next characters} until the given {@code stop} character or the end is reached.
-   * If the {@code stop} character was reached, this scanner will point to the next character after {@code stop} when
-   * this method returns.
+   * This method skips all {@link #next() next code-points} until the given {@code stop} {@link String#codePointAt(int)
+   * code-point} or the end is reached. If the {@code stop} {@link String#codePointAt(int) code-point} was reached, this
+   * scanner will point to the next character after {@code stop} when this method returns.
    *
-   * @param stop is the character to read until.
+   * @param stop is the {@link String#codePointAt(int) code-point} to read until.
    * @return {@code true} if the first occurrence of the given {@code stop} character has been passed, {@code false} if
    *         there is no such character.
    */
-  boolean skipUntil(char stop);
+  boolean skipUntil(int stop);
 
   /**
    * This method reads all {@link #next() next characters} until the given {@code stop} character or the end of the
-   * string to parse is reached. In advance to {@link #skipUntil(char)}, this method will read over the {@code stop}
+   * string to parse is reached. In advance to {@link #skipUntil(int)}, this method will read over the {@code stop}
    * character if it is escaped with the given {@code escape} character.
    *
-   * @param stop is the character to read until.
-   * @param escape is the character used to escape the stop character (e.g. '\').
+   * @param stop is the {@link String#codePointAt(int) code-point} to read until.
+   * @param escape is the {@link String#codePointAt(int) code-point} used to escape the stop character (e.g. '\').
    * @return {@code true} if the first occurrence of the given {@code stop} character has been passed, {@code false} if
    *         there is no such character.
    */
-  boolean skipUntil(char stop, char escape);
+  boolean skipUntil(int stop, int escape);
 
   /**
    * This method skips the number of {@link #next() next characters} given by {@code count}.
@@ -1057,7 +1061,7 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
 
   /**
    * This method consumes all {@link #next() next characters} until the given {@code substring} has been detected, a
-   * character was {@link CharFilter#accept(char) accepted} by the given {@link CharFilter} or the end of data was
+   * character was {@link CharFilter#accept(int) accepted} by the given {@link CharFilter} or the end of data was
    * reached.<br>
    * After the call of this method this scanner will point to the next character after the first occurrence of
    * {@code substring}, to the stop character or to end of data. <br>
@@ -1065,9 +1069,9 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
    * @param substring is the substring to search and skip over starting at the current index.
    * @param ignoreCase - if {@code true} the case of the characters is ignored when compared with characters from
    *        {@code substring}.
-   * @param stopFilter is the filter used to {@link CharFilter#accept(char) detect} stop characters. If such character
+   * @param stopFilter is the filter used to {@link CharFilter#accept(int) detect} stop characters. If such character
    *        was detected, the skip is stopped and the parser points to the character after the stop character. The
-   *        {@code substring} should NOT contain a {@link CharFilter#accept(char) stop character}.
+   *        {@code substring} should NOT contain a {@link CharFilter#accept(int) stop character}.
    * @return {@code true} if the given {@code substring} occurred and has been passed and {@code false} if a stop
    *         character has been detected or the end of the string has been reached without any occurrence of the given
    *         {@code substring} or stop character.
@@ -1075,27 +1079,29 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
   boolean skipOver(String substring, boolean ignoreCase, CharFilter stopFilter);
 
   /**
-   * This method reads all {@link #next() next characters} that are identical to the character given by {@code c}. <br>
-   * E.g. use {@link #skipWhile(char) readWhile(' ')} to skip all blanks from the current index. After the call of this
-   * method, the current index will point to the next character that is different to the given character {@code c} or to
-   * the end if NO such character exists.
+   * This method reads all {@link #next() next code-points} that are identical to the given
+   * {@link String#codePointAt(int) code-point}. <br>
+   * E.g. use {@link #skipWhile(int) skipWhile(' ')} to skip all spaces from the current index. After the call of this
+   * method, the current index will point to the next character that is different to the given
+   * {@link String#codePointAt(int) code-point} or to the {@link #EOS end} if NO such character exists.
    *
-   * @param c is the character to read over.
+   * @param codePoint is the {@link String#codePointAt(int) code-point} to read over.
    * @return the number of characters that have been skipped.
    */
-  int skipWhile(char c);
+  int skipWhile(int codePoint);
 
   /**
-   * This method reads all {@link #next() next characters} that are {@link CharFilter#accept(char) accepted} by the
-   * given {@code filter}. <br>
+   * This method reads all {@link #next() next code-points} that are {@link CharFilter#accept(int) accepted} by the
+   * given {@link CharFilter}. <br>
    * After the call of this method, the current index will point to the next character that was NOT
-   * {@link CharFilter#accept(char) accepted} by the given {@code filter} or to the end if NO such character exists.
+   * {@link CharFilter#accept(int) accepted} by the given {@code filter} or to the {@link #EOS end} if NO such character
+   * exists.
    *
-   * @see #skipWhile(char)
+   * @see #skipWhile(int)
    *
-   * @param filter is used to {@link CharFilter#accept(char) decide} which characters should be accepted.
-   * @return the number of characters {@link CharFilter#accept(char) accepted} by the given {@code filter} that have
-   *         been skipped.
+   * @param filter is used to {@link CharFilter#accept(int) decide} which characters should be accepted.
+   * @return the number of characters {@link CharFilter#accept(int) accepted} by the given {@code filter} that have been
+   *         skipped.
    */
   default int skipWhile(CharFilter filter) {
 
@@ -1103,16 +1109,16 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
   }
 
   /**
-   * This method reads all {@link #next() next characters} that are {@link CharFilter#accept(char) accepted} by the
+   * This method reads all {@link #next() next code-points} that are {@link CharFilter#accept(int) accepted} by the
    * given {@code filter}. <br>
    * After the call of this method, the current index will point to the next character that was NOT
-   * {@link CharFilter#accept(char) accepted} by the given {@code filter}. If the next {@code max} characters or the
-   * characters left until the {@link #hasNext() end} of this scanner are {@link CharFilter#accept(char) accepted}, only
+   * {@link CharFilter#accept(int) accepted} by the given {@code filter}. If the next {@code max} characters or the
+   * characters left until the {@link #hasNext() end} of this scanner are {@link CharFilter#accept(int) accepted}, only
    * that amount of characters are skipped.
    *
-   * @see #skipWhile(char)
+   * @see #skipWhile(int)
    *
-   * @param filter is used to {@link CharFilter#accept(char) decide} which characters should be accepted.
+   * @param filter is used to {@link CharFilter#accept(int) decide} which characters should be accepted.
    * @param max is the maximum number of characters that may be skipped.
    * @return the number of skipped characters.
    */
@@ -1126,12 +1132,12 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
    * return {@link #peek()};
    * </pre>
    *
-   * @param filter is used to {@link CharFilter#accept(char) decide} which characters should be accepted.
-   * @return the first character that was not {@link CharFilter#accept(char) accepted} by the given {@link CharFilter}.
-   *         Only the {@link CharFilter#accept(char) accepted} characters have been consumed, this scanner still points
+   * @param filter is used to {@link CharFilter#accept(int) decide} which characters should be accepted.
+   * @return the first character that was not {@link CharFilter#accept(int) accepted} by the given {@link CharFilter}.
+   *         Only the {@link CharFilter#accept(int) accepted} characters have been consumed, this scanner still points
    *         to the returned character.
    */
-  default char skipWhileAndPeek(CharFilter filter) {
+  default int skipWhileAndPeek(CharFilter filter) {
 
     return skipWhileAndPeek(filter, Integer.MAX_VALUE);
   }
@@ -1144,13 +1150,13 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
    * return {@link #peek()};
    * </pre>
    *
-   * @param filter is used to {@link CharFilter#accept(char) decide} which characters should be accepted.
+   * @param filter is used to {@link CharFilter#accept(int) decide} which characters should be accepted.
    * @param max is the maximum number of characters that may be skipped.
-   * @return the first character that was not {@link CharFilter#accept(char) accepted} by the given {@link CharFilter}.
-   *         Only the {@link CharFilter#accept(char) accepted} characters have been consumed, this scanner still points
+   * @return the first character that was not {@link CharFilter#accept(int) accepted} by the given {@link CharFilter}.
+   *         Only the {@link CharFilter#accept(int) accepted} characters have been consumed, this scanner still points
    *         to the returned character.
    */
-  default char skipWhileAndPeek(CharFilter filter, int max) {
+  default int skipWhileAndPeek(CharFilter filter, int max) {
 
     skipWhile(filter, max);
     return peek();

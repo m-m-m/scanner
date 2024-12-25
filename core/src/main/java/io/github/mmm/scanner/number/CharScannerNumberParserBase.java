@@ -64,7 +64,7 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
    * The constructor.
    *
    * @param radixMode the {@link CharScannerRadixHandler} for {@link #radix(int, char)}.
-   * @param specials the {@link #special(String) special numbers} and {@link #special(char) delimiters}.
+   * @param specials the {@link #special(String) special numbers} and {@link #special(int) delimiters}.
    */
   public CharScannerNumberParserBase(CharScannerRadixHandler radixMode, CharScannerNumberSpecial... specials) {
 
@@ -75,7 +75,7 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
   }
 
   /**
-   * @param delimiters the accepted {@link #special(char) delimiter} characters.
+   * @param delimiters the accepted {@link #special(int) delimiter} characters.
    * @param specialNumbers - {@code true} to accept the special numbers {@link #NAN} and {@link #INFINITY}.
    * @return the resulting {@link String} array to pass to
    *         {@link #CharScannerNumberParserBase(CharScannerRadixHandler, CharScannerNumberSpecial...) constructor}.
@@ -94,7 +94,7 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
     }
     int pos = 0;
     while (i < len) {
-      result[i++] = new CharScannerNumberSpecialDelimiter(delimiters.charAt(pos++));
+      result[i++] = new CharScannerNumberSpecialDelimiter(delimiters.codePointAt(pos++));
     }
     return result;
   }
@@ -159,10 +159,10 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
   }
 
   @Override
-  public boolean digit(int digit, char digitChar) {
+  public boolean digit(int digit, int digitChar) {
 
     if (this.builder != null) {
-      this.builder.append(digitChar);
+      this.builder.appendCodePoint(digitChar);
     }
     if (this.exponentSymbol == 0) {
       if (digit == 0) {
@@ -256,7 +256,7 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
   }
 
   @Override
-  public String special(char c) {
+  public String special(int c) {
 
     for (CharScannerNumberSpecial special : this.specials) {
       if (special.isSpecialStart(c)) {
@@ -311,16 +311,16 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
   /**
    * Interface for handling of a special number syntax.
    *
-   * @see CharScannerNumberParser#special(char)
+   * @see CharScannerNumberParser#special(int)
    * @see CharScannerNumberParser#special(String)
    */
   public static interface CharScannerNumberSpecial {
 
     /**
-     * @param c the {@link CharScannerNumberParser#special(char) special character} to check.
+     * @param c the {@link CharScannerNumberParser#special(int) special character} to check.
      * @return {@code true} if the given character shall be handled by this {@link CharScannerNumberSpecial}.
      */
-    boolean isSpecialStart(char c);
+    boolean isSpecialStart(int c);
 
     /**
      * @return the {@link CharScannerNumberParser#special(String) special} {@link String} to expect.
@@ -334,7 +334,7 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
    */
   public static class CharScannerNumberSpecialDelimiter implements CharScannerNumberSpecial {
 
-    private final char delimiter;
+    private final int delimiter;
 
     private final String delimiterString;
 
@@ -343,7 +343,7 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
      *
      * @param delimiter the delimiter.
      */
-    public CharScannerNumberSpecialDelimiter(char delimiter) {
+    public CharScannerNumberSpecialDelimiter(int delimiter) {
 
       super();
       this.delimiter = delimiter;
@@ -351,7 +351,7 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
     }
 
     @Override
-    public boolean isSpecialStart(char c) {
+    public boolean isSpecialStart(int c) {
 
       if (c == this.delimiter) {
         // double d = 1_2.0_0e+1_0;
@@ -391,7 +391,7 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
     }
 
     @Override
-    public boolean isSpecialStart(char c) {
+    public boolean isSpecialStart(int c) {
 
       if (c == this.first) {
         return true; // +/- can be followed by "NaN" or "Infinity" but no digits before

@@ -6,13 +6,7 @@ import io.github.mmm.base.filter.CharFilter;
 import io.github.mmm.base.text.TextFormatMessageHandler;
 
 /**
- * This class represents a {@link String} or better a sequence of characters ({@code char[]}) together with a
- * {@link #getCurrentIndex() position} in that sequence. <br>
- * It has various useful methods for scanning the sequence. This scanner is designed to be fast on long sequences and
- * therefore internally {@link String#toCharArray() converts} {@link String}s to a char array instead of frequently
- * calling {@link String#charAt(int)}. <br>
- * <b>ATTENTION:</b><br>
- * This implementation is NOT thread-safe (intended by design).
+ * Implementation of {@link CharStreamScanner} based on {@link String}.
  *
  * @since 1.0.0
  */
@@ -75,7 +69,7 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
    */
   public CharSequenceScanner(String string, TextFormatMessageHandler messageHandler, int line, int column) {
 
-    this(string.toCharArray(), messageHandler, line, column);
+    this(string, 0, string.length(), messageHandler, line, column);
     this.string = string;
   }
 
@@ -83,69 +77,6 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
    * The constructor.
    *
    * @param characters is an array containing the characters to scan.
-   */
-  public CharSequenceScanner(char[] characters) {
-
-    this(characters, null);
-  }
-
-  /**
-   * The constructor.
-   *
-   * @param characters is an array containing the characters to scan.
-   * @param messageHandler the {@link TextFormatMessageHandler}.
-   */
-  public CharSequenceScanner(char[] characters, TextFormatMessageHandler messageHandler) {
-
-    this(characters, 0, characters.length, messageHandler);
-  }
-
-  /**
-   * The constructor.
-   *
-   * @param characters is an array containing the characters to scan.
-   * @param messageHandler the {@link TextFormatMessageHandler}.
-   * @param line the initial {@link #getLine() line}.
-   * @param column the initial {@link #getColumn() column}.
-   */
-  public CharSequenceScanner(char[] characters, TextFormatMessageHandler messageHandler, int line, int column) {
-
-    this(characters, 0, characters.length, messageHandler, line, column);
-  }
-
-  /**
-   * The constructor.
-   *
-   * @param characters is an array containing the characters to scan.
-   * @param offset is the index of the first char to scan in {@code characters} (typically {@code 0} to start at the
-   *        beginning of the array).
-   * @param length is the {@link #getLength() number of characters} to scan from {@code characters} starting at
-   *        {@code offset} (typically <code>characters.length - offset</code>).
-   */
-  public CharSequenceScanner(char[] characters, int offset, int length) {
-
-    this(characters, offset, length, null);
-  }
-
-  /**
-   * The constructor.
-   *
-   * @param characters is an array containing the characters to scan.
-   * @param offset is the index of the first char to scan in {@code characters} (typically {@code 0} to start at the
-   *        beginning of the array).
-   * @param length is the {@link #getLength() number of characters} to scan from {@code characters} starting at
-   *        {@code offset} (typically <code>characters.length - offset</code>).
-   * @param messageHandler the {@link TextFormatMessageHandler}.
-   */
-  public CharSequenceScanner(char[] characters, int offset, int length, TextFormatMessageHandler messageHandler) {
-
-    this(characters, offset, length, messageHandler, 1, 1);
-  }
-
-  /**
-   * The constructor.
-   *
-   * @param characters is an array containing the characters to scan.
    * @param offset is the index of the first char to scan in {@code characters} (typically {@code 0} to start at the
    *        beginning of the array).
    * @param length is the {@link #getLength() number of characters} to scan from {@code characters} starting at
@@ -154,17 +85,15 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
    * @param line the initial {@link #getLine() line}.
    * @param column the initial {@link #getColumn() column}.
    */
-  public CharSequenceScanner(char[] characters, int offset, int length, TextFormatMessageHandler messageHandler,
+  public CharSequenceScanner(String characters, int offset, int length, TextFormatMessageHandler messageHandler,
       int line, int column) {
 
     super(characters, messageHandler, line, column);
     if (offset < 0) {
       throw new IndexOutOfBoundsException(Integer.toString(offset));
-    }
-    if (length < 0) {
+    } else if (length < 0) {
       throw new IndexOutOfBoundsException(Integer.toString(length));
-    }
-    if (offset > characters.length - length) {
+    } else if (offset > characters.length() - length) {
       throw new IndexOutOfBoundsException(Integer.toString(offset + length));
     }
     this.offset = offset;
@@ -179,9 +108,9 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
    * @param index is the index of the requested character.
    * @return the character at the given {@code index}.
    */
-  public char charAt(int index) {
+  public int charAt(int index) {
 
-    return this.buffer[this.initialOffset + index];
+    return this.buffer.codePointAt(this.initialOffset + index);
   }
 
   @Override
@@ -209,7 +138,7 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
    */
   public String substring(int start, int end) {
 
-    return new String(this.buffer, this.initialOffset + start, end - start);
+    return this.buffer.substring(this.initialOffset + start, this.initialOffset + end);
   }
 
   /**
@@ -224,11 +153,10 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
    */
   public String getReplaced(String substitute, int start, int end) {
 
-    int restLength = this.limit - end;
     StringBuilder builder = builder(null);
     builder.append(this.buffer, this.initialOffset, start);
     builder.append(substitute);
-    builder.append(this.buffer, this.initialOffset + end, restLength);
+    builder.append(this.buffer, this.initialOffset + end, this.limit);
     return builder.toString();
   }
 
@@ -280,32 +208,32 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
   }
 
   @Override
-  public char next() {
+  public int next() {
 
     if (this.offset < this.limit) {
-      return handleChar(this.buffer[this.offset++]);
+      return handleCodePoint(this.buffer.codePointAt(this.offset++));
     } else {
       return 0;
     }
   }
 
   @Override
-  public char peek() {
+  public int peek() {
 
     if (this.offset < this.limit) {
-      return this.buffer[this.offset];
+      return this.buffer.codePointAt(this.offset);
     } else {
       return 0;
     }
   }
 
   @Override
-  public char peek(int lookaheadOffset) {
+  public int peek(int lookaheadOffset) {
 
     int i = this.offset + lookaheadOffset;
     if ((i < this.limit) && (i >= this.initialOffset)) {
       if (i < this.limit) {
-        return this.buffer[i];
+        return this.buffer.codePointAt(i);
       }
     }
     return EOS;
@@ -325,12 +253,11 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
   @Override
   public String peekString(int count) {
 
-    int len = this.limit - this.offset;
-    if (len > count) {
-      len = count;
+    int end = this.offset + count;
+    if (end > this.limit) {
+      end = this.limit;
     }
-    String result = new String(this.buffer, this.offset, len);
-    return result;
+    return this.buffer.substring(this.offset, end);
   }
 
   @Override
@@ -339,22 +266,22 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
     if (maxLen < 0) {
       throw new IllegalArgumentException("Max must NOT be negative: " + maxLen);
     }
-    int len = 0;
-    int end = this.limit - this.offset;
-    if (end > maxLen) {
-      end = maxLen;
+    int end = this.offset + maxLen;
+    if (end > this.limit) {
+      end = this.limit;
     }
-    while (len < end) {
-      char c = this.buffer[this.offset + len];
-      if (!filter.accept(c)) {
+    int i = this.offset;
+    while (i < end) {
+      int cp = this.buffer.codePointAt(i);
+      if (!filter.accept(cp)) {
         break;
       }
-      len++;
+      i++;
     }
-    if (len == 0) {
+    if (i == this.offset) {
       return "";
     } else {
-      return new String(this.buffer, this.offset, len);
+      return this.buffer.substring(this.offset, i);
     }
   }
 
@@ -363,17 +290,16 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
 
     int start = this.offset;
     while (this.offset < this.limit) {
-      char c = this.buffer[this.offset];
-      if (filter.accept(c)) {
-        return new String(this.buffer, start, this.offset - start);
+      int cp = this.buffer.codePointAt(this.offset);
+      if (filter.accept(cp)) {
+        return this.buffer.substring(start, this.offset + 1);
       }
-      handleChar(c);
+      handleCodePoint(cp);
       this.offset++;
     }
     if (acceptEot) {
-      int len = this.offset - start;
-      if (len > 0) {
-        return new String(this.buffer, start, len);
+      if (start > this.offset) {
+        return this.buffer.substring(start, this.offset);
       } else {
         return "";
       }
@@ -383,19 +309,20 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
   }
 
   @Override
-  protected boolean expectRestWithLookahead(char[] stopChars, boolean ignoreCase, Runnable appender, boolean skip) {
+  protected boolean expectRestWithLookahead(String stopChars, boolean ignoreCase, Runnable appender, boolean skip) {
 
-    int myCharsIndex = this.offset + 1;
-    int stopCharsIndex = 1;
-    while (stopCharsIndex < stopChars.length) {
-      char c = this.buffer[myCharsIndex++];
-      char stopChar = stopChars[stopCharsIndex++];
-      if ((c != stopChar) && (!ignoreCase || (Character.toLowerCase(c) != stopChar))) {
+    int bufferIndex = this.offset + 1;
+    int stopIndex = 1;
+    int stopLength = stopChars.length();
+    while (stopIndex < stopLength) {
+      int cp = this.buffer.codePointAt(bufferIndex++);
+      int stopCp = stopChars.codePointAt(stopIndex++);
+      if ((cp != stopCp) && (!ignoreCase || (Character.toLowerCase(cp) != stopCp))) {
         return false;
       }
     }
     if (skip) {
-      setOffset(myCharsIndex);
+      setOffset(bufferIndex);
     }
     return true;
   }
@@ -409,13 +336,13 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
       return false;
     }
     for (int i = 0; i < len; i++) {
-      char c = this.buffer[newPos];
-      char exp = expected.charAt(i);
-      if (c != exp) {
+      int cp = this.buffer.codePointAt(newPos);
+      int expCp = expected.codePointAt(i);
+      if (cp != expCp) {
         if (!ignoreCase) {
           return false;
         }
-        if (Character.toLowerCase(c) != Character.toLowerCase(exp)) {
+        if (Character.toLowerCase(cp) != Character.toLowerCase(expCp)) {
           return false;
         }
       }
@@ -436,7 +363,7 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
 
     String tail = "";
     if (this.offset < this.limit) {
-      tail = new String(this.buffer, this.offset, this.limit - this.offset + 1);
+      tail = this.buffer.substring(this.offset, this.limit);
     }
     return tail;
   }
@@ -452,11 +379,11 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
 
     String tail = "";
     if (this.offset < this.limit) {
-      int count = this.limit - this.offset + 1;
-      if (count > maximum) {
-        count = maximum;
+      int end = this.offset + maximum;
+      if (end > this.limit) {
+        end = this.limit;
       }
-      tail = new String(this.buffer, this.offset, count);
+      tail = this.buffer.substring(this.offset, end);
     }
     return tail;
   }
@@ -472,12 +399,12 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
   @Override
   public String readWhile(CharFilter filter, int min, int max) {
 
-    int currentPos = this.offset;
+    int start = this.offset;
     int len = skipWhile(filter, max);
     if (len == 0) {
       return "";
     } else {
-      return new String(this.buffer, currentPos, len);
+      return this.buffer.substring(start, start + len);
     }
   }
 
@@ -491,7 +418,7 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
   public String getOriginalString() {
 
     if (this.string != null) {
-      this.string = new String(this.buffer, this.initialOffset, getLength());
+      this.string = this.buffer.substring(this.initialOffset);
     }
     return this.string;
   }

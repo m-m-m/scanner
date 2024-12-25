@@ -688,10 +688,10 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     CharStreamScanner scanner = scanner(string);
     for (int i = 0; i < 10; i++) {
       assertThat(scanner.hasNext()).isTrue();
-      char c = scanner.next();
+      int cp = scanner.next();
       char expected = (char) ('0' + i);
       // then
-      assertThat(c).isEqualTo(expected);
+      assertThat(cp).isEqualTo(expected);
     }
     assertThat(scanner.hasNext()).isFalse();
     assertThat(scanner.next()).isEqualTo('\0');

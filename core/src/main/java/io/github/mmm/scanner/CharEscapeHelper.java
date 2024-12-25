@@ -43,9 +43,8 @@ public class CharEscapeHelper {
    * @param c the character that was escaped (e.g. 't' for tab, 'n' for line feed, 'r' for carriage return, '0' for NUL,
    *        etc.)
    * @return the resolved (unescaped) character according to JLS 3.10.6 or {@code null} for invalid escape character.
-   * @see #resolveEscape(String)
    */
-  public static Character resolveEscape(char c) {
+  public static Character resolveEscape(int c) {
 
     switch (c) {
       case '0':
@@ -84,43 +83,4 @@ public class CharEscapeHelper {
     return null;
   }
 
-  /**
-   * @param sequence the sequence of characters that has been escaped (e.g. "u000A" for line feed, or "u00df" for
-   *        szlig/ß, etc.)
-   * @return the resolved (unescaped) character according to JLS 3.10.6 or {@code null} for invalid escape sequence.
-   * @see #resolveEscape(char)
-   */
-  public static Character resolveEscape(String sequence) {
-
-    if (sequence == null) {
-      return null;
-    }
-    int length = sequence.length();
-    if (length == 0) {
-      return null;
-    } else if (length == 1) {
-      return resolveEscape(sequence.charAt(0));
-    } else if (length < 4) { // octal C compatibility legacy stuff
-      for (int i = 0; i < length; i++) {
-        char c = sequence.charAt(i);
-        if ((c < '0') || (c > '7')) {
-          return null;
-        }
-      }
-      int value = Integer.parseInt(sequence, 8);
-      if (value <= 0377) {
-        return Character.valueOf((char) value);
-      }
-    } else if (length >= 5) {
-      int start = length - 4;
-      for (int i = start - 1; i >= 0; i--) {
-        if (sequence.charAt(i) != 'u') {
-          return null;
-        }
-      }
-      int value = Integer.parseInt(sequence.substring(start), 16);
-      return Character.valueOf((char) value);
-    }
-    return null;
-  }
 }

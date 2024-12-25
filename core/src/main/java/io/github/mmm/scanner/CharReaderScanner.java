@@ -9,13 +9,19 @@ import io.github.mmm.base.filter.CharFilter;
 import io.github.mmm.base.text.TextFormatMessageHandler;
 
 /**
- * Implementation of {@link CharStreamScanner} that adapts a {@link Reader} to read and parse textual data.
+ * Implementation of {@link CharStreamScanner} that adapts a {@link Reader} to read and parse textual data. Unlike
+ * {@link CharStreamScanner} it allows to parse very long textual data without reading it entirely into the heap memory
+ * as a {@link String}.
+ *
+ * @since 1.0.0
  */
 public class CharReaderScanner extends AbstractCharStreamScanner {
 
   private Reader reader;
 
-  private char[] lookaheadBuffer;
+  private final char[] charBuffer;
+
+  private String lookaheadBuffer;
 
   private int lookaheadLimit;
 
@@ -102,7 +108,8 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
    */
   public CharReaderScanner(int capacity, TextFormatMessageHandler messageHandler, Reader reader) {
 
-    super(capacity, messageHandler);
+    super("", messageHandler);
+    this.charBuffer = new char[capacity];
     this.reader = reader;
   }
 
@@ -113,17 +120,17 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
   }
 
   @Override
-  public char peek(int lookaheadOffset) {
+  public int peek(int lookaheadOffset) {
 
     if (hasNext()) {
       int i = this.offset + lookaheadOffset;
       if (i < this.limit) {
-        return this.buffer[i];
+        return this.buffer.codePointAt(i);
       }
       if (fillLookahead()) {
         i = i - this.limit;
         if (i < this.lookaheadLimit) {
-          return this.lookaheadBuffer[i];
+          return this.lookaheadBuffer.codePointAt(i);
         } else {
           throwLookaheadError(lookaheadOffset);
         }
@@ -140,7 +147,7 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
     }
     int rest = this.limit - this.offset;
     if (rest >= count) {
-      return new String(this.buffer, this.offset, count);
+      return this.buffer.substring(this.offset, this.offset + count);
     } else if (fillLookahead()) {
       int fullRest = rest + this.lookaheadLimit;
       if ((count > fullRest) && !isEos()) {
@@ -151,7 +158,7 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
       sb.append(this.lookaheadBuffer, 0, count - rest);
       return sb.toString();
     } else {
-      return new String(this.buffer, this.offset, rest);
+      return this.buffer.substring(this.offset, this.limit);
     }
   }
 
@@ -161,38 +168,39 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
     if (!hasNext()) {
       return "";
     }
-    int rest = this.limit - this.offset;
-    if (rest > maxLen) {
-      rest = maxLen;
+    int end = this.offset + maxLen;
+    if (end > this.limit) {
+      end = this.limit;
     }
-    int len = 0;
-    while (len < rest) {
-      char c = this.buffer[this.offset + len];
-      if (!filter.accept(c)) {
-        return new String(this.buffer, this.offset, len);
+    int i = this.offset;
+    while (i < end) {
+      int cp = this.buffer.codePointAt(i);
+      if (!filter.accept(cp)) {
+        return this.buffer.substring(this.offset, i);
       }
-      len++;
+      i++;
     }
     if (fillLookahead()) {
+      int rest = i - this.offset;
       int fullRest = rest + this.lookaheadLimit;
       if ((maxLen > fullRest) && !isEos()) {
         throwLookaheadError(maxLen);
       }
-      len = 0;
-      int end = maxLen - rest;
-      while (len < end) {
-        char c = this.lookaheadBuffer[len];
-        if (!filter.accept(c)) {
+      i = 0;
+      end = maxLen - rest;
+      while (i < end) {
+        int cp = this.lookaheadBuffer.codePointAt(i);
+        if (!filter.accept(cp)) {
           break;
         }
-        len++;
+        i++;
       }
-      StringBuilder sb = new StringBuilder(rest + len);
-      sb.append(this.buffer, this.offset, rest);
-      sb.append(this.lookaheadBuffer, 0, len);
+      StringBuilder sb = new StringBuilder(rest + i);
+      sb.append(this.buffer, this.offset, this.limit);
+      sb.append(this.lookaheadBuffer, 0, i);
       return sb.toString();
     } else {
-      return new String(this.buffer, this.offset, rest);
+      return this.buffer.substring(this.offset, end);
     }
   }
 
@@ -200,14 +208,14 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
   public String getBufferToParse() {
 
     if (this.offset < this.limit) {
-      int count = this.limit - this.offset;
       if (this.lookaheadLimit > 0) {
+        int count = this.limit - this.offset;
         StringBuilder sb = new StringBuilder(this.lookaheadLimit + count);
         sb.append(this.buffer, this.offset, count);
         sb.append(this.lookaheadBuffer, 0, this.lookaheadLimit);
         return sb.toString();
       } else {
-        return new String(this.buffer, this.offset, count);
+        return this.buffer.substring(this.offset, this.limit);
       }
     } else {
       return "";
@@ -244,13 +252,16 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
     try {
       this.limit = 0;
       while (this.limit == 0) {
-        this.limit = this.reader.read(this.buffer);
+        this.limit = this.reader.read(this.charBuffer);
       }
       if (this.limit == -1) {
         close();
+        this.buffer = "";
         this.limit = 0;
         return false;
       }
+      this.buffer = new String(this.charBuffer, 0, this.limit);
+      this.limit = this.buffer.length();
       return true;
     } catch (IOException e) {
       throw new IllegalStateException("Read error.", e);
@@ -265,19 +276,19 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
     if (this.reader == null) {
       return false;
     }
-    if (this.lookaheadBuffer == null) {
-      this.lookaheadBuffer = new char[this.buffer.length];
-    }
     try {
       this.lookaheadLimit = 0;
       while (this.lookaheadLimit == 0) {
-        this.lookaheadLimit = this.reader.read(this.lookaheadBuffer);
+        this.lookaheadLimit = this.reader.read(this.charBuffer);
       }
       if (this.lookaheadLimit == -1) {
         close();
+        this.lookaheadBuffer = "";
         this.lookaheadLimit = 0;
         return false;
       }
+      this.lookaheadBuffer = new String(this.charBuffer, 0, this.lookaheadLimit);
+      this.lookaheadLimit = this.lookaheadBuffer.length();
       return true;
     } catch (IOException e) {
       throw new IllegalStateException("Read error.", e);
@@ -288,7 +299,7 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
 
     this.position += this.limit;
     setOffset(this.limit);
-    char[] tmp = this.lookaheadBuffer;
+    String tmp = this.lookaheadBuffer;
     this.lookaheadBuffer = this.buffer;
     this.buffer = tmp;
     this.offset = 0;
@@ -363,16 +374,16 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
       verifyLookahead(expectedLength);
     }
     int myLimit = this.limit;
-    char[] myBuffer = this.buffer;
+    String myBuffer = this.buffer;
     int expectedIndex = 0;
     while (expectedIndex < expectedLength) {
-      char c = myBuffer[myOffset++];
-      char exp = expected.charAt(expectedIndex++);
-      if (c != exp) {
+      int cp = myBuffer.codePointAt(myOffset++);
+      int expCp = expected.codePointAt(expectedIndex++);
+      if (cp != expCp) {
         if (!ignoreCase) {
           return false;
         }
-        if (Character.toLowerCase(c) != Character.toLowerCase(exp)) {
+        if (Character.toLowerCase(cp) != Character.toLowerCase(expCp)) {
           return false;
         }
       }
@@ -400,7 +411,7 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
   @Override
   protected void verifyLookahead(int length) {
 
-    if (length > this.buffer.length) {
+    if (length > this.charBuffer.length) {
       throwLookaheadError(length);
     }
   }
@@ -408,16 +419,17 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
   private void throwLookaheadError(int length) {
 
     throw new IllegalArgumentException(
-        "Lookahead size of " + length + " characters exceeds the configured buffer size of " + this.buffer.length);
+        "Lookahead size of " + length + " characters exceeds the configured buffer size of " + this.charBuffer.length);
   }
 
   @Override
-  protected boolean expectRestWithLookahead(char[] stopChars, boolean ignoreCase, Runnable appender, boolean skip) {
+  protected boolean expectRestWithLookahead(String stopChars, boolean ignoreCase, Runnable appender, boolean skip) {
 
-    int myCharsIndex = this.offset + 1;
-    int subCharsIndex = 1;
-    while (subCharsIndex < stopChars.length) {
-      if (myCharsIndex == this.limit) { // lookahead required?
+    int bufferIndex = this.offset + 1;
+    int stopIndex = 1;
+    int stopLength = stopChars.length();
+    while (stopIndex < stopLength) {
+      if (bufferIndex == this.limit) { // lookahead required?
         if (!fillLookahead()) {
           if (skip) {
             setOffset(this.limit);
@@ -425,10 +437,10 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
           return false;
         }
         int lookaheadIndex = 0;
-        while (subCharsIndex < stopChars.length) {
-          char c = this.lookaheadBuffer[lookaheadIndex++];
-          char stopChar = stopChars[subCharsIndex++];
-          if (c != stopChar && (!ignoreCase || (Character.toLowerCase(c) != stopChar))) {
+        while (stopIndex < stopLength) {
+          int cp = this.lookaheadBuffer.codePointAt(lookaheadIndex++);
+          int stopCp = stopChars.codePointAt(stopIndex++);
+          if (cp != stopCp && (!ignoreCase || (Character.toLowerCase(cp) != stopCp))) {
             return false;
           }
         }
@@ -441,15 +453,15 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
         }
         return true;
       } else {
-        char c = this.buffer[myCharsIndex++];
-        char stopChar = stopChars[subCharsIndex++];
-        if (c != stopChar && (!ignoreCase || (Character.toLowerCase(c) != stopChar))) {
+        int cp = this.buffer.codePointAt(bufferIndex++);
+        int stopCp = stopChars.codePointAt(stopIndex++);
+        if (cp != stopCp && (!ignoreCase || (Character.toLowerCase(cp) != stopCp))) {
           return false;
         }
       }
     }
     if (skip) {
-      setOffset(myCharsIndex);
+      setOffset(bufferIndex);
     }
     return true;
   }

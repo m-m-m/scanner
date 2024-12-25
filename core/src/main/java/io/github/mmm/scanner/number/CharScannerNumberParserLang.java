@@ -93,7 +93,7 @@ public class CharScannerNumberParserLang extends CharScannerNumberParserBase {
    *
    * @param radixMode the {@link CharScannerRadixHandler} for {@link #radix(int, char)}.
    * @param numberType the {@link NumberType}.
-   * @param delimiters the accepted {@link #special(char) delimiter} characters.
+   * @param delimiters the accepted {@link #special(int) delimiter} characters.
    */
   public CharScannerNumberParserLang(CharScannerRadixHandler radixMode, NumberType<?> numberType, String delimiters) {
 
@@ -105,7 +105,7 @@ public class CharScannerNumberParserLang extends CharScannerNumberParserBase {
    *
    * @param radixMode the {@link CharScannerRadixHandler} for {@link #radix(int, char)}.
    * @param numberType the {@link NumberType}.
-   * @param delimiters the accepted {@link #special(char) delimiter} characters.
+   * @param delimiters the accepted {@link #special(int) delimiter} characters.
    * @param maxNonDecimal the maximum allowed number (e.g. {@link Integer#MAX_VALUE} to parse an {@link Integer} value).
    */
   public CharScannerNumberParserLang(CharScannerRadixHandler radixMode, NumberType<?> numberType, String delimiters,
@@ -217,16 +217,16 @@ public class CharScannerNumberParserLang extends CharScannerNumberParserBase {
     }
   }
 
-  private void error(char c) {
+  private void error(int c) {
 
     if (this.builder == null) {
-      builder().append(c); // if number was not null before, c has already been appended
+      builder().appendCodePoint(c); // if number was not null before, c has already been appended
     }
     this.error = true;
   }
 
   @Override
-  public boolean digit(int digit, char digitChar) {
+  public boolean digit(int digit, int digitChar) {
 
     super.digit(digit, digitChar);
     if (this.error) {
@@ -352,7 +352,7 @@ public class CharScannerNumberParserLang extends CharScannerNumberParserBase {
     }
   }
 
-  private void preventCase(int digit, char digitChar) {
+  private void preventCase(int digit, int digitChar) {
 
     if ((digit > 9) && (this.builder == null)) { // prevent case of letter digits (e.g. hex)
       boolean upper = Character.isUpperCase(digitChar);
@@ -360,7 +360,7 @@ public class CharScannerNumberParserLang extends CharScannerNumberParserBase {
         this.upperCase = Boolean.valueOf(upper);
       } else if (this.upperCase.booleanValue() != upper) {
         // mixed case - to preserve original string, we start building what we can otherwise prevent for performance
-        builder().append(digitChar);
+        builder().appendCodePoint(digitChar);
         this.upperCase = null;
       }
     }
