@@ -292,13 +292,13 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
     while (this.offset < this.limit) {
       int cp = this.buffer.codePointAt(this.offset);
       if (filter.accept(cp)) {
-        return this.buffer.substring(start, this.offset + 1);
+        return this.buffer.substring(start, this.offset);
       }
       handleCodePoint(cp);
       this.offset++;
     }
     if (acceptEot) {
-      if (start > this.offset) {
+      if (this.offset > start) {
         return this.buffer.substring(start, this.offset);
       } else {
         return "";

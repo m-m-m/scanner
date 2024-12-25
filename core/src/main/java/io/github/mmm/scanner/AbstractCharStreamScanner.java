@@ -433,7 +433,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
       while (this.offset < this.limit) {
         int codePoint = this.buffer.codePointAt(this.offset);
         if (filter.accept(codePoint)) {
-          return getAppended(builder, start, this.offset - 1);
+          return getAppended(builder, start, this.offset);
         }
         handleCodePoint(codePoint);
         this.offset++;
