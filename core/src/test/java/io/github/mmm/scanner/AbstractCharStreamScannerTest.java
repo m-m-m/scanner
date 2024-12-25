@@ -353,6 +353,56 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   }
 
   /**
+   * Test of {@link CharStreamScanner#readUntil(CharFilter, boolean)} reading until stop char was hit.
+   */
+  @Test
+  public void testReadUntilWithCharFilter() {
+
+    // arrange
+    String string = " blabla_$";
+    CharStreamScanner scanner;
+    scanner = scanner(string);
+    // act
+    String result = scanner.readUntil(cp -> cp == '$', true);
+    // assert
+    assertThat(result).isEqualTo(" blabla_");
+  }
+
+  /**
+   * Test of {@link CharStreamScanner#readUntil(CharFilter, boolean)} reading until EOT if no stop char was hit but
+   * {@code acceptEnd} was {@code true}.
+   */
+  @Test
+  public void testReadUntilWithCharFilterEot() {
+
+    // arrange
+    String string = " blabla_$";
+    CharStreamScanner scanner;
+    scanner = scanner(string);
+    // act
+    String result = scanner.readUntil(CharFilter.NEWLINE, true);
+    // assert
+    assertThat(result).isEqualTo(string);
+  }
+
+  /**
+   * Test of {@link CharStreamScanner#readUntil(CharFilter, boolean)} returning {@code null} if no stop char was hit but
+   * {@code acceptEnd} was {@code false}.
+   */
+  @Test
+  public void testReadUntilWithCharFilterNoEot() {
+
+    // arrange
+    String string = " blabla_$";
+    CharStreamScanner scanner;
+    scanner = scanner(string);
+    // act
+    String result = scanner.readUntil(CharFilter.NEWLINE, false);
+    // assert
+    assertThat(result).isNull();
+  }
+
+  /**
    * Test of {@link CharStreamScanner#readUntil(CharFilter, boolean, String, boolean ignoreCase, boolean)} with buffer
    * limit overflow.
    */
