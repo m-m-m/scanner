@@ -109,7 +109,7 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
   public CharReaderScanner(int capacity, TextFormatMessageHandler messageHandler, Reader reader) {
 
     super("", messageHandler);
-    this.charBuffer = new char[capacity];
+    this.charBuffer = new char[capacity + 1];
     this.reader = reader;
   }
 
@@ -252,13 +252,21 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
     try {
       this.limit = 0;
       while (this.limit == 0) {
-        this.limit = this.reader.read(this.charBuffer);
+        this.limit = this.reader.read(this.charBuffer, 0, this.charBuffer.length - 1);
       }
       if (this.limit == -1) {
         close();
         this.buffer = "";
         this.limit = 0;
         return false;
+      }
+      char last = this.charBuffer[this.limit - 1];
+      if (Character.isSurrogate(last)) {
+        int next = this.reader.read();
+        if (next >= 0) {
+          this.charBuffer[this.limit] = (char) next;
+          this.limit++;
+        }
       }
       this.buffer = new String(this.charBuffer, 0, this.limit);
       this.limit = this.buffer.length();

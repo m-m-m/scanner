@@ -1112,4 +1112,22 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
       assertThat(e).isInstanceOf(exception).hasMessageContaining(expectedErrorValue);
     }
   }
+
+  @Test
+  public void testUnicode() {
+
+    // arrange
+    String gClev = "\uD834\uDD1E";
+    String dBar = "\uD834\uDD01";
+    String x = "x";
+    String note1_8 = "\uD834\uDD60";
+    String text = gClev + dBar + x + note1_8;
+    CharStreamScanner scanner = scanner(text);
+    // act + assert
+    assertThat(scanner.next()).isEqualTo(gClev.codePointAt(0));
+    assertThat(scanner.next()).isEqualTo(dBar.codePointAt(0));
+    assertThat(scanner.next()).isEqualTo(x.codePointAt(0));
+    assertThat(scanner.next()).isEqualTo(note1_8.codePointAt(0));
+    assertThat(scanner.hasNext()).isFalse();
+  }
 }

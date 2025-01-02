@@ -242,7 +242,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
   public int next() {
 
     if (hasNext()) {
-      return handleCodePoint(this.buffer.codePointAt(this.offset++));
+      return handleCodePoint(this.buffer.codePointAt(this.offset));
     }
     return EOS;
   }
@@ -261,6 +261,11 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     } else {
       this.column++;
     }
+    if (codePoint >= 0x010000) {
+      this.offset += 2;
+    } else {
+      this.offset++;
+    }
     return codePoint;
   }
 
@@ -272,7 +277,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     assert (newOffset >= this.offset);
     assert (newOffset <= this.limit);
     while (this.offset < newOffset) {
-      handleCodePoint(this.buffer.codePointAt(this.offset++));
+      handleCodePoint(this.buffer.codePointAt(this.offset));
     }
   }
 
@@ -312,7 +317,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     while (true) {
       int start = this.offset;
       while (this.offset < this.limit) {
-        int codePoint = this.buffer.codePointAt(this.offset++);
+        int codePoint = this.buffer.codePointAt(this.offset);
         handleCodePoint(codePoint);
         if (codePoint == stop) {
           return getAppended(builder, start, this.offset - 1);
@@ -349,7 +354,6 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
           return state.builder.toString();
         }
         handleCodePoint(codePoint);
-        this.offset++;
       }
       boolean eot = isEot();
       if (!eot || acceptEot) {
@@ -389,7 +393,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     while (true) {
       int start = this.offset;
       while (this.offset < this.limit) {
-        int codePoint = this.buffer.codePointAt(this.offset++);
+        int codePoint = this.buffer.codePointAt(this.offset);
         handleCodePoint(codePoint);
         if (codePoint == escape) {
           builder = append(builder, start, this.offset - 1);
@@ -407,7 +411,6 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
             builder = builder(builder);
             builder.appendCodePoint(codePoint);
             handleCodePoint(codePoint);
-            this.offset++;
             start = this.offset;
           }
         } else if (codePoint == stop) {
@@ -436,7 +439,6 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
           return getAppended(builder, start, this.offset);
         }
         handleCodePoint(codePoint);
-        this.offset++;
       }
       builder = append(builder, start, this.limit);
       if (!fill()) {
@@ -561,7 +563,6 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
 
     if (hasNext() && (this.buffer.codePointAt(this.offset) == expected)) {
       handleCodePoint(expected);
-      this.offset++;
       return true;
     }
     if (warning) {
@@ -602,7 +603,6 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
         }
       }
       handleCodePoint(codePoint);
-      this.offset++;
     }
     return true;
   }
@@ -622,15 +622,13 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
       appender.trimEnd = this.offset;
       while (this.offset < this.limit) {
         int codePoint = this.buffer.codePointAt(this.offset);
-        handleCodePoint(codePoint);
         if (codePoint == '\r') {
           int end = this.offset;
-          this.offset++;
+          handleCodePoint(codePoint);
           if (this.offset < this.limit) {
             codePoint = this.buffer.codePointAt(this.offset);
             if (codePoint == '\n') {
               handleCodePoint(codePoint);
-              this.offset++;
             }
             return appender.getAppended(end);
           } else { // EOL insanity...
@@ -639,19 +637,18 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
               codePoint = this.buffer.codePointAt(this.offset);
               if (codePoint == '\n') {
                 handleCodePoint(codePoint);
-                this.offset++;
               }
             }
             return appender.toString();
           }
         } else if (codePoint == '\n') {
           String result = appender.getAppended();
-          this.offset++;
+          handleCodePoint(codePoint);
           return result;
         } else if (codePoint != ' ') {
           appender.foundNonSpace();
         }
-        this.offset++;
+        handleCodePoint(codePoint);
       }
       appender.append(this.limit);
       if (!fill()) {
@@ -671,12 +668,11 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
       return null;
     }
     handleCodePoint(codePoint);
-    this.offset++;
     StringBuilder builder = null;
     while (hasNext()) {
       int start = this.offset;
       while (this.offset < this.limit) {
-        codePoint = this.buffer.codePointAt(this.offset++);
+        codePoint = this.buffer.codePointAt(this.offset);
         handleCodePoint(codePoint);
         if (codePoint == '"') {
           return getAppended(builder, start, this.offset - 1);
@@ -998,7 +994,6 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
       if ((value >= 0) && (value < radix)) {
         result = value;
         handleCodePoint(codePoint);
-        this.offset++;
       }
     }
     return result;
@@ -1313,7 +1308,6 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
           return count + (this.offset - start);
         }
         handleCodePoint(c);
-        this.offset++;
       }
       count += (this.offset - start);
     }
@@ -1344,7 +1338,6 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
           break;
         }
         handleCodePoint(cp);
-        this.offset++;
       }
       int len = this.offset - start;
       remain -= len;
@@ -1391,10 +1384,10 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
           if (found) {
             return true;
           }
+          next();
         } else {
           handleCodePoint(cp);
         }
-        this.offset++;
       }
       if (!fill()) {
         // TODO reset text position
@@ -1434,7 +1427,6 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
           return requireMin(getAppended(builder, start, this.offset), min, filter);
         }
         handleCodePoint(cp);
-        this.offset++;
       }
       int len = this.offset - start;
       remain -= len;
