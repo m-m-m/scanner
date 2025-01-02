@@ -744,7 +744,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
       assertThat(cp).isEqualTo(expected);
     }
     assertThat(scanner.hasNext()).isFalse();
-    assertThat(scanner.next()).isEqualTo('\0');
+    assertThat(scanner.next()).isEqualTo(CharStreamScanner.EOS);
     assertThat(scanner.getPosition()).isEqualTo(10);
     assertThat(scanner.getColumn()).isEqualTo(11);
     assertThat(scanner.getLine()).isEqualTo(1);
@@ -898,8 +898,8 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     assertThat(scanner.peek()).isEqualTo('c');
     assertThat(scanner.next()).isEqualTo('c');
 
-    assertThat(scanner.peek()).isEqualTo('\0');
-    assertThat(scanner.next()).isEqualTo('\0');
+    assertThat(scanner.peek()).isEqualTo(CharStreamScanner.EOS);
+    assertThat(scanner.next()).isEqualTo(CharStreamScanner.EOS);
   }
 
   @Test
@@ -940,8 +940,8 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     // when
     CharStreamScanner scanner = scanner(string);
     // then
-    assertThat(scanner.peek()).isEqualTo('\0');
-    assertThat(scanner.next()).isEqualTo('\0');
+    assertThat(scanner.peek()).isEqualTo(CharStreamScanner.EOS);
+    assertThat(scanner.next()).isEqualTo(CharStreamScanner.EOS);
     assertThat(scanner.readDigit()).isEqualTo(-1);
     assertThat(scanner.read(1)).isEmpty();
     assertThat(scanner.readLine()).isNull();
@@ -958,8 +958,8 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     assertThat(scanner.skipUntil(' ', '\\')).isFalse();
     assertThat(scanner.skipWhile(' ')).isEqualTo(0);
     assertThat(scanner.skipWhile(filter)).isEqualTo(0);
-    assertThat(scanner.skipWhileAndPeek(filter)).isEqualTo('\0');
-    assertThat(scanner.skipWhileAndPeek(filter, 10)).isEqualTo('\0');
+    assertThat(scanner.skipWhileAndPeek(filter)).isEqualTo(CharStreamScanner.EOS);
+    assertThat(scanner.skipWhileAndPeek(filter, 10)).isEqualTo(CharStreamScanner.EOS);
     assertThat(scanner.expectOne(' ')).isFalse();
     assertThat(scanner.expectUnsafe("Text", true)).isFalse();
     assertThat(scanner.getPosition()).isEqualTo(0);

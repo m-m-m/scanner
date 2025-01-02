@@ -287,7 +287,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     if (hasNext()) {
       return this.buffer.codePointAt(this.offset);
     }
-    return 0;
+    return EOS;
   }
 
   /**
@@ -740,7 +740,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
         return Character.valueOf((char) cp);
       } else {
         error = new StringBuilder("'");
-        if (cp != 0) {
+        if (cp != CharStreamScanner.EOS) {
           error.appendCodePoint(cp);
         }
       }

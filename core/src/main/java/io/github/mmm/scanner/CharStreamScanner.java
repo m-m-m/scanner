@@ -24,7 +24,7 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
    * @see #next()
    * @see #peek()
    */
-  int EOS = '\0';
+  int EOS = -1;
 
   /**
    * This method determines if there is at least one more character available.

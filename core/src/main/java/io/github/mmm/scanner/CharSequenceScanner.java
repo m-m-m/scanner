@@ -213,7 +213,7 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
     if (this.offset < this.limit) {
       return handleCodePoint(this.buffer.codePointAt(this.offset));
     } else {
-      return 0;
+      return EOS;
     }
   }
 
@@ -223,7 +223,7 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
     if (this.offset < this.limit) {
       return this.buffer.codePointAt(this.offset);
     } else {
-      return 0;
+      return EOS;
     }
   }
 
