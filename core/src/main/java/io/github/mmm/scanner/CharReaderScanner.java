@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.Reader;
 
 import io.github.mmm.base.filter.CharFilter;
+import io.github.mmm.base.io.ReaderHelper;
 import io.github.mmm.base.text.TextFormatMessageHandler;
 
 /**
@@ -249,31 +250,16 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
     setOffset(this.limit);
     this.position += this.limit;
     this.offset = 0;
-    try {
+    this.limit = ReaderHelper.read(this.reader, this.charBuffer);
+    if (this.limit == -1) {
+      close();
+      this.buffer = "";
       this.limit = 0;
-      while (this.limit == 0) {
-        this.limit = this.reader.read(this.charBuffer, 0, this.charBuffer.length - 1);
-      }
-      if (this.limit == -1) {
-        close();
-        this.buffer = "";
-        this.limit = 0;
-        return false;
-      }
-      char last = this.charBuffer[this.limit - 1];
-      if (Character.isSurrogate(last)) {
-        int next = this.reader.read();
-        if (next >= 0) {
-          this.charBuffer[this.limit] = (char) next;
-          this.limit++;
-        }
-      }
-      this.buffer = new String(this.charBuffer, 0, this.limit);
-      this.limit = this.buffer.length();
-      return true;
-    } catch (IOException e) {
-      throw new IllegalStateException("Read error.", e);
+      return false;
     }
+    this.buffer = new String(this.charBuffer, 0, this.limit);
+    this.limit = this.buffer.length();
+    return true;
   }
 
   private boolean fillLookahead() {
