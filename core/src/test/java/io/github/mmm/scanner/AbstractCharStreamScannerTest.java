@@ -41,32 +41,32 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testSkipWhile() {
 
-    // given
+    // arrange
     String string = "abc def  ghi";
-    // when
+    // act
     CharStreamScanner scanner = scanner(string);
     int skipCount = scanner.skipWhile(' ');
-    // then
+    // assert
     assertThat(skipCount).isEqualTo(0);
-    // and when
+    // act again
     String read = scanner.read(3);
-    // then
+    // assert
     assertThat(read).isEqualTo("abc");
-    // and when
+    // act again
     skipCount = scanner.skipWhile(' ');
-    // then
+    // assert
     assertThat(skipCount).isEqualTo(1);
-    // and when
+    // act again
     read = scanner.read(3);
-    // then
+    // assert
     assertThat(read).isEqualTo("def");
-    // and when
+    // act again
     skipCount = scanner.skipWhile(' ');
-    // then
+    // assert
     assertThat(skipCount).isEqualTo(2);
-    // and when
+    // act again
     read = scanner.read(3);
-    // then
+    // assert
     assertThat(read).isEqualTo("ghi");
     assertThat(scanner.hasNext()).isFalse();
   }
@@ -74,48 +74,48 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testSkipWhileFilter() {
 
-    // given
+    // arrange
     String string = "abc def \tghi\t\t \t";
     CharFilter filter = (c) -> (c == ' ' || c == '\t');
-    // when
+    // act
     CharStreamScanner scanner = scanner(string);
     assertThat(scanner.getPosition()).isEqualTo(0);
     int skipCount = scanner.skipWhile(filter);
-    // then
+    // assert
     assertThat(skipCount).isEqualTo(0);
-    // and when
+    // act again
     String read = scanner.read(3);
-    // then
+    // assert
     assertThat(read).isEqualTo("abc");
     assertThat(scanner.getPosition()).isEqualTo(3);
-    // and when
+    // act again
     skipCount = scanner.skipWhile(filter);
-    // then
+    // assert
     assertThat(skipCount).isEqualTo(1);
     assertThat(scanner.getPosition()).isEqualTo(4);
-    // and when
+    // act again
     read = scanner.read(3);
-    // then
+    // assert
     assertThat(read).isEqualTo("def");
     assertThat(scanner.getPosition()).isEqualTo(7);
-    // and when
+    // act again
     skipCount = scanner.skipWhile(filter);
-    // then
+    // assert
     assertThat(skipCount).isEqualTo(2);
     assertThat(scanner.getPosition()).isEqualTo(9);
-    // and when
+    // act again
     read = scanner.read(3);
-    // then
+    // assert
     assertThat(read).isEqualTo("ghi");
     assertThat(scanner.getPosition()).isEqualTo(12);
-    // and when
+    // act again
     skipCount = scanner.skipWhile(filter, 3);
-    // then
+    // assert
     assertThat(skipCount).isEqualTo(3);
     assertThat(scanner.getPosition()).isEqualTo(15);
-    // and when
+    // act again
     skipCount = scanner.skipWhile(filter, 5);
-    // then
+    // assert
     assertThat(skipCount).isEqualTo(1);
     assertThat(scanner.hasNext()).isFalse();
     assertThat(scanner.getPosition()).isEqualTo(16);
@@ -124,16 +124,16 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testSkipOver() {
 
-    // given
+    // arrange
     String substring = "xYz";
     String string = "xxYzFOOxYztheend";
-    // when
+    // act
     CharStreamScanner scanner = scanner(string, true);
-    // then
+    // assert
     checkSkipOver(scanner, substring, false);
-    // and when
+    // act again
     scanner = scanner(string.toLowerCase(), true);
-    // then
+    // assert
     checkSkipOver(scanner, substring, true);
   }
 
@@ -172,25 +172,25 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testReadUntil() {
 
-    // given
+    // arrange
     String string = "string";
     CharStreamScanner scanner;
-    // when (not escaped)
+    // act (not escaped)
     scanner = scanner(string);
-    // then
+    // assert
     assertThat(scanner.readUntil('n', false)).isEqualTo("stri");
     assertThat(scanner.next()).isEqualTo('g');
     assertThat(scanner.hasNext()).isFalse();
 
-    // and when (no EOF)
+    // act again (no EOF)
     scanner = scanner(string);
-    // then
+    // assert
     assertThat(scanner.readUntil('x', false)).isNull();
     assertThat(scanner.hasNext()).isFalse();
 
-    // and when (EOF)
+    // act again (EOF)
     scanner = scanner(string);
-    // then
+    // assert
     assertThat(scanner.readUntil('x', true)).isEqualTo(string);
     assertThat(scanner.hasNext()).isFalse();
 
@@ -203,16 +203,16 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   public void testReadUntilWithEscape() {
 
     CharStreamScanner scanner;
-    // when (test with different escape and stop char)
+    // act (test with different escape and stop char)
     scanner = scanner("bla\"Quotet text with \\\" and \\\\ inside!\"bla");
-    // then
+    // assert
     assertThat(scanner.readUntil('"', false)).isEqualTo("bla");
     assertThat(scanner.readUntil('"', false, '\\')).isEqualTo("Quotet text with \" and \\ inside!");
     assertThat(scanner.readUntil('\0', true)).isEqualTo("bla");
 
-    // and when (test with same escape and stop char)
+    // act again (test with same escape and stop char)
     scanner = scanner("bla\"Quotet text with \"\" and \\ inside!\"bla");
-    // then
+    // assert
     assertThat(scanner.readUntil('"', false)).isEqualTo("bla");
     assertThat(scanner.readUntil('"', false, '"')).isEqualTo("Quotet text with \" and \\ inside!");
     assertThat(scanner.readUntil('\0', true)).isEqualTo("bla");
@@ -225,16 +225,16 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testReadUntilWithStopString() {
 
-    // given
+    // arrange
     CharFilter filter = CharFilter.NEWLINE;
     String string = "/* comment */\n" + //
         "  /*\n" + //
         "   *   Line  1.    \n" + //
         "   * Line2  \n" + //
         "   */";
-    // when
+    // act
     CharStreamScanner scanner = scanner(string, true);
-    // then
+    // assert
     assertThat(scanner.expectUnsafe("/*")).isTrue();
     assertThat(scanner.readUntil(filter, false, "*/", false, true)).isEqualTo("comment");
     assertThat(scanner.expectUnsafe("*/")).isTrue();
@@ -256,14 +256,14 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testReadUntilWithSyntaxBackslashEscaped() {
 
-    // given
+    // arrange
     String end = "12345";
     String string = "\"Quotet text with \\\" inside!\"" + end;
     CharScannerSyntaxBean syntax = new CharScannerSyntaxBean();
     syntax.setEscape('\\');
-    // when
+    // act
     CharStreamScanner scanner = scanner(string);
-    // then
+    // assert
     assertThat(scanner.next()).isEqualTo('\"');
     assertThat(scanner.getPosition()).isEqualTo(1);
     assertThat(scanner.getColumn()).isEqualTo(2);
@@ -287,12 +287,12 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testReadUntilWithSyntaxSingleQuotes() {
 
-    // given
+    // arrange
     CharScannerSyntaxBean syntax = new CharScannerSyntaxBean();
     syntax.setEscape('\\');
     syntax.setQuote('\'');
     syntax.setQuoteEscape('\'');
-    // when + then
+    // act + assert
     check('x', true, syntax, "''a''''b'''c''d' x", "a'b'c'd ");
   }
 
@@ -303,13 +303,13 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testReadUntilWithSyntaxSingleQuotesLazy() {
 
-    // given
+    // arrange
     CharScannerSyntaxBean syntax = new CharScannerSyntaxBean();
     syntax.setEscape('\\');
     syntax.setQuote('\'');
     syntax.setQuoteEscape('\'');
     syntax.setQuoteEscapeLazy(true);
-    // when + then
+    // act + assert
     check('x', true, syntax, "''a''''b'''c'dx", "'a''b'cd");
   }
 
@@ -320,7 +320,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testReadUntilWithSyntaxAltDobuleQuotes() {
 
-    // given
+    // arrange
     CharScannerSyntaxBean syntax = new CharScannerSyntaxBean();
     syntax.setEscape('\\');
     syntax.setQuote('\'');
@@ -328,7 +328,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     syntax.setQuoteEscapeLazy(true);
     syntax.setAltQuote('"');
     syntax.setAltQuoteEscape('"');
-    // when + then
+    // act + assert
     check('x', true, syntax, "\"\"a\"\"\"\"b\"\"\"c\"dx", "a\"b\"cd");
   }
 
@@ -339,7 +339,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testReadUntilWithSyntaxAltDobuleQuotesLazy() {
 
-    // given
+    // arrange
     CharScannerSyntaxBean syntax = new CharScannerSyntaxBean();
     syntax.setEscape('\\');
     syntax.setQuote('\'');
@@ -348,7 +348,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     syntax.setAltQuote('"');
     syntax.setAltQuoteEscape('"');
     syntax.setAltQuoteEscapeLazy(true);
-    // when + then
+    // act + assert
     check('x', true, syntax, "\"\"a\"\"\"\"b\"\"\"c\"dx", "\"a\"\"b\"cd");
   }
 
@@ -409,16 +409,16 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testReadUntilWithCharFilterAndStopString() {
 
-    // given
+    // arrange
     String string = " blabla_$\n";
     CharStreamScanner scanner;
-    // when
+    // act
     scanner = scanner(string);
-    // then
+    // assert
     assertThat(scanner.readUntil(CharFilter.NEWLINE, true, "$", false, true)).isEqualTo("blabla_");
-    // and when
+    // act again
     scanner = scanner(string, true);
-    // then
+    // assert
     assertThat(scanner.readUntil(CharFilter.NEWLINE, true, "_$", false, true)).isEqualTo("blabla");
   }
 
@@ -443,11 +443,11 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testReadDoubles() {
 
-    // given
+    // arrange
     String string = "123456789-987654321+0.123e-10xyz";
-    // when
+    // act
     CharStreamScanner scanner = scanner(string, 4);
-    // then
+    // assert
     assertThat(scanner.readDouble()).isEqualTo(123456789d);
     assertThat(scanner.readDouble()).isEqualTo(-987654321d);
     assertThat(scanner.readDouble()).isEqualTo(+0.123e-10);
@@ -491,7 +491,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
 
   private void checkDoubleString(String number) {
 
-    // when
+    // act
     double expected = Double.parseDouble(number);
     CharStreamScanner scanner = scanner(number, 9);
     CharScannerNumberParserLang numberParser = new CharScannerNumberParserLang(CharScannerRadixMode.NO_OCTAL,
@@ -499,7 +499,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     scanner.readNumber(numberParser);
     Double result = numberParser.asDouble();
 
-    // then
+    // assert
     if (!Objects.equals(result, expected)) {
       System.out.println("Error for: " + number);
       System.out.println("expected : " + formatBinary(expected) + " | " + expected);
@@ -542,7 +542,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
 
   private Double checkDouble(String number) {
 
-    // when java.lang
+    // act java.lang
     Double javaD = null;
     NumberFormatException javaE = null;
     try {
@@ -550,7 +550,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     } catch (NumberFormatException e) {
       javaE = e;
     }
-    // and when mmm scanner
+    // act again mmm scanner
     Double scannerD = null;
     NumberFormatException scannerE = null;
     try {
@@ -559,7 +559,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     } catch (NumberFormatException e) {
       scannerE = e;
     }
-    // then
+    // assert
     assertThat(scannerD).isEqualTo(javaD);
     if (javaD == null) {
       assertThat(javaE).isNotNull();
@@ -579,11 +579,11 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testReadFloats() {
 
-    // given
+    // arrange
     String string = "123456789-987654321+0.123e-10xyz";
-    // when
+    // act
     CharStreamScanner scanner = scanner(string, 4);
-    // then
+    // assert
     assertThat(scanner.readFloat()).isEqualTo(123456789f);
     assertThat(scanner.readFloat()).isEqualTo(-987654321f);
     assertThat(scanner.readFloat()).isEqualTo(+0.123e-10f);
@@ -599,7 +599,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testReadUntilWithSyntaxFull() {
 
-    // given (full syntax)
+    // arrange (full syntax)
     CharScannerSyntaxBean syntax = new CharScannerSyntaxBean() {
 
       @Override
@@ -623,20 +623,20 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     syntax.setEntityStart('&');
     syntax.setEntityEnd(';');
 
-    // when
+    // act
     CharStreamScanner scanner = scanner("Hi \"$\"quote$\"\", 'a''l\\t' and \\\"esc\\'&lt;&gt;&lt;x&gt;!");
     String result = scanner.readUntil('!', false, syntax);
-    // then
+    // assert
     assertThat(result).isEqualTo("Hi \"quote\", a'l\\t and \"esc'<><x>");
     assertThat(scanner.hasNext()).isFalse();
     assertThat(scanner.getPosition()).isEqualTo(54);
     assertThat(scanner.getColumn()).isEqualTo(55);
     assertThat(scanner.getLine()).isEqualTo(1);
 
-    // and when (with acceptEof)
+    // act again (with acceptEof)
     scanner = scanner("Hi 'qu''ote'");
     result = scanner.readUntil('\0', true, syntax);
-    // then
+    // assert
     assertThat(result).isEqualTo("Hi qu'ote");
     assertThat(scanner.hasNext()).isFalse();
     assertThat(scanner.getPosition()).isEqualTo(12);
@@ -674,13 +674,13 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testExpectPositive() {
 
-    // given
+    // arrange
     String start = "hello ";
     String middle = "world";
     String end = " this is cool!";
-    // when
+    // act
     CharStreamScanner scanner = scanner(start + middle + end);
-    // then
+    // assert
     assertThat(scanner.expectUnsafe(start, false)).isTrue();
     assertThat(scanner.expectUnsafe(middle.toUpperCase(Locale.ENGLISH), true)).isTrue();
     assertThat(scanner.expectUnsafe(end.toLowerCase(Locale.ENGLISH), true)).isTrue();
@@ -693,11 +693,11 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testExpectStrict() {
 
-    // given
+    // arrange
     String string = "Hello World!";
-    // when
+    // act
     CharStreamScanner scanner = scanner(string, true);
-    // then
+    // assert
     assertThat(scanner.expect("Hello WorlD", false)).isFalse();
     assertThat(scanner.getPosition()).isEqualTo(0);
     assertThat(scanner.getColumn()).isEqualTo(1);
@@ -716,11 +716,11 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testExpectNegative() {
 
-    // given
+    // arrange
     String string = "string";
-    // when
+    // act
     CharStreamScanner scanner = scanner(string);
-    // then
+    // assert
     assertThat(scanner.expectUnsafe("strign", false)).isFalse();
     assertThat(scanner.read(2)).isEqualTo("ng");
     assertThat(scanner.hasNext()).isFalse();
@@ -732,15 +732,15 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testNext() {
 
-    // given
+    // arrange
     String string = "0123456789";
-    // when
+    // act
     CharStreamScanner scanner = scanner(string);
     for (int i = 0; i < 10; i++) {
       assertThat(scanner.hasNext()).isTrue();
       int cp = scanner.next();
       char expected = (char) ('0' + i);
-      // then
+      // assert
       assertThat(cp).isEqualTo(expected);
     }
     assertThat(scanner.hasNext()).isFalse();
@@ -753,13 +753,13 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testReadWhile() {
 
-    // given
+    // arrange
     String string = "abc def  ghi";
     CharFilter textFilter = CharFilter.LATIN_LETTER;
     CharFilter spaceFilter = CharFilter.WHITESPACE;
-    // when
+    // act
     CharStreamScanner scanner = scanner(string);
-    // then
+    // assert
     assertThat(scanner.readWhile(textFilter)).isEqualTo("abc");
     assertThat(scanner.readWhile(textFilter)).isEmpty();
     assertThat(scanner.readWhile(textFilter, 0, 0)).isEmpty();
@@ -777,13 +777,13 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testPeekWhile() {
 
-    // given
+    // arrange
     String string = "abc def  ghi";
     CharFilter textFilter = CharFilter.LATIN_LETTER;
     CharFilter spaceFilter = CharFilter.WHITESPACE;
-    // when
+    // act
     CharStreamScanner scanner = scanner(string, 3);
-    // then
+    // assert
     assertThat(scanner.peekWhile(textFilter, 3)).isEqualTo("abc");
     scanner.skip(3);
     assertThat(scanner.peekWhile(textFilter, 3)).isEmpty();
@@ -799,22 +799,22 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testReadLine() {
 
-    // given
+    // arrange
     String string = "abc\ndef\rghi\r\njkl\n\rend";
-    // when
+    // act
     CharStreamScanner scanner = scanner(string);
-    // then
+    // assert
     assertThat(scanner.readLine()).isEqualTo("abc");
     assertThat(scanner.readLine()).isEqualTo("def");
     assertThat(scanner.readLine()).isEqualTo("ghi");
     assertThat(scanner.readLine()).isEqualTo("jkl");
     assertThat(scanner.readLine()).isEmpty();
     assertThat(scanner.readLine()).isEqualTo("end");
-    // given
+    // arrange
     string = "abc\ndef\nghi\r\njkl\n\nend";
-    // when
+    // act
     scanner = scanner(string);
-    // then
+    // assert
     assertThat(scanner.readLine()).isEqualTo("abc");
     assertThat(scanner.getPosition()).isEqualTo(4);
     assertThat(scanner.getColumn()).isEqualTo(1);
@@ -844,11 +844,11 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testReadLineWithTrim() {
 
-    // given
+    // arrange
     String string = "  ab c \ndef\r ghi\r\nj k l\n \r \n  \r\n   end";
-    // when
+    // act
     CharStreamScanner scanner = scanner(string);
-    // then
+    // assert
     assertThat(scanner.readLine(true)).isEqualTo("ab c");
     assertThat(scanner.readLine(true)).isEqualTo("def");
     assertThat(scanner.readLine(true)).isEqualTo("ghi");
@@ -862,11 +862,11 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testReadDigit() {
 
-    // given
+    // arrange
     String string = "01234567890a ";
-    // when
+    // act
     CharStreamScanner scanner = scanner(string);
-    // then
+    // assert
     for (int i = 0; i < 10; i++) {
       assertThat(scanner.readDigit()).isEqualTo(i);
     }
@@ -883,11 +883,11 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testPeek() {
 
-    // given
+    // arrange
     String string = "abc";
-    // when
+    // act
     CharStreamScanner scanner = scanner(string);
-    // then
+    // assert
     assertThat(scanner.peek()).isEqualTo('a');
     assertThat(scanner.peek()).isEqualTo('a');
     assertThat(scanner.next()).isEqualTo('a');
@@ -905,11 +905,11 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testExpect() {
 
-    // given
+    // arrange
     String string = "public static final String foo;";
-    // when
+    // act
     CharStreamScanner scanner = scanner(string);
-    // then
+    // assert
     assertThat(scanner.expectUnsafe("public", false)).isTrue();
     assertThat(scanner.expectOne('$')).isFalse();
     assertThat(scanner.expectOne(' ')).isTrue();
@@ -933,13 +933,13 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testEmpty() {
 
-    // given
+    // arrange
     String string = "";
     CharScannerSyntaxBean syntax = new CharScannerSyntaxBean();
     CharFilter filter = CharFilter.ANY;
-    // when
+    // act
     CharStreamScanner scanner = scanner(string);
-    // then
+    // assert
     assertThat(scanner.peek()).isEqualTo(CharStreamScanner.EOS);
     assertThat(scanner.next()).isEqualTo(CharStreamScanner.EOS);
     assertThat(scanner.readDigit()).isEqualTo(-1);
@@ -973,12 +973,12 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testReadJavaStringLiteral() {
 
-    // given
+    // arrange
     String string = "\"Hi \\\"\\176\\477\\579\\u2022\\uuuuu2211\\\"\\n\"";
-    // when
+    // act
     CharStreamScanner scanner = scanner(string);
     String result = scanner.readJavaStringLiteral();
-    // then
+    // assert
     assertThat(result).isEqualTo("Hi \"\176\477\579\u2022\uuuuu2211\"\n").isEqualTo("Hi \"~'7/9•∑\"\n");
     assertThat(scanner.hasNext()).isFalse();
     assertThat(scanner.getPosition()).isEqualTo(39);
@@ -1034,11 +1034,11 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   @Test
   public void testReadJavaCharLiteral() {
 
-    // given
+    // arrange
     String string = "'a'$'\\''$'\\\\'$'\\0'$'\\47'$'\\176'$'\\u2022'$";
-    // when
+    // act
     CharStreamScanner scanner = scanner(string);
-    // then
+    // assert
     assertThat(scanner.readJavaCharLiteral()).isEqualTo('a');
     assertThat(scanner.expectOne('$')).isTrue();
     assertThat(scanner.readJavaCharLiteral()).isEqualTo('\'');
@@ -1060,9 +1060,9 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
 
     // and given
     string = "'a''\\'''\\\\''\\0''\\47''\\176''\\u2022'";
-    // when
+    // act
     scanner = scanner(string);
-    // then
+    // assert
     assertThat(scanner.readJavaCharLiteral()).isEqualTo('a');
     assertThat(scanner.readJavaCharLiteral()).isEqualTo('\'');
     assertThat(scanner.readJavaCharLiteral()).isEqualTo('\\');

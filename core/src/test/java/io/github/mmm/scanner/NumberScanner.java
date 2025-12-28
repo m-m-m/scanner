@@ -129,7 +129,7 @@ abstract class NumberScanner<N extends Number & Comparable<N>> extends Assertion
 
   private N check(String number) {
 
-    // when java.lang
+    // act java.lang
     N javaNumber = null;
     NumberFormatException javaError = null;
     try {
@@ -137,7 +137,7 @@ abstract class NumberScanner<N extends Number & Comparable<N>> extends Assertion
     } catch (NumberFormatException e) {
       javaError = e;
     }
-    // and when mmm scanner
+    // act again mmm scanner
     N scannerNumber = null;
     NumberFormatException scannerError = null;
     try {
@@ -146,7 +146,7 @@ abstract class NumberScanner<N extends Number & Comparable<N>> extends Assertion
     } catch (NumberFormatException e) {
       scannerError = e;
     }
-    // then
+    // assert
     assertThat(scannerNumber).isEqualTo(javaNumber);
     if (javaNumber == null) {
       assertThat(javaError).isNotNull();
