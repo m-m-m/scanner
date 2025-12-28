@@ -7,7 +7,7 @@ import java.io.StringReader;
 /**
  * Test of {@link CharReaderScanner}.
  */
-public class CharReaderScannerTest extends AbstractCharStreamScannerTest {
+class CharReaderScannerTest extends AbstractCharStreamScannerTest {
 
   private static final CharReaderScanner SCANNER = new CharReaderScanner(1, HANDLER);
 

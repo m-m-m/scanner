@@ -39,7 +39,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   protected abstract CharStreamScanner scanner(String string, int capacity);
 
   @Test
-  public void testSkipWhile() {
+  void testSkipWhile() {
 
     // arrange
     String string = "abc def  ghi";
@@ -72,7 +72,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   }
 
   @Test
-  public void testSkipWhileFilter() {
+  void testSkipWhileFilter() {
 
     // arrange
     String string = "abc def \tghi\t\t \t";
@@ -122,7 +122,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   }
 
   @Test
-  public void testSkipOver() {
+  void testSkipOver() {
 
     // arrange
     String substring = "xYz";
@@ -150,7 +150,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   }
 
   @Test
-  public void testSkipUntil() {
+  void testSkipUntil() {
 
     // unescaped
     CharStreamScanner scanner = scanner("string");
@@ -170,7 +170,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
    * Tests {@link CharStreamScanner#readUntil(char, boolean)}.
    */
   @Test
-  public void testReadUntil() {
+  void testReadUntil() {
 
     // arrange
     String string = "string";
@@ -200,7 +200,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
    * Tests {@link CharStreamScanner#readUntil(char, boolean, char)}.
    */
   @Test
-  public void testReadUntilWithEscape() {
+  void testReadUntilWithEscape() {
 
     CharStreamScanner scanner;
     // act (test with different escape and stop char)
@@ -223,7 +223,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
    * Tests {@link CharStreamScanner#readUntil(CharFilter, boolean, String, boolean, boolean)}.
    */
   @Test
-  public void testReadUntilWithStopString() {
+  void testReadUntilWithStopString() {
 
     // arrange
     CharFilter filter = CharFilter.NEWLINE;
@@ -254,7 +254,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
    * char.
    */
   @Test
-  public void testReadUntilWithSyntaxBackslashEscaped() {
+  void testReadUntilWithSyntaxBackslashEscaped() {
 
     // arrange
     String end = "12345";
@@ -285,7 +285,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
    * quote.
    */
   @Test
-  public void testReadUntilWithSyntaxSingleQuotes() {
+  void testReadUntilWithSyntaxSingleQuotes() {
 
     // arrange
     CharScannerSyntaxBean syntax = new CharScannerSyntaxBean();
@@ -301,7 +301,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
    * quote and {@link CharScannerSyntax#isQuoteEscapeLazy() lazy quote}.
    */
   @Test
-  public void testReadUntilWithSyntaxSingleQuotesLazy() {
+  void testReadUntilWithSyntaxSingleQuotesLazy() {
 
     // arrange
     CharScannerSyntaxBean syntax = new CharScannerSyntaxBean();
@@ -318,7 +318,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
    * quote.
    */
   @Test
-  public void testReadUntilWithSyntaxAltDobuleQuotes() {
+  void testReadUntilWithSyntaxAltDobuleQuotes() {
 
     // arrange
     CharScannerSyntaxBean syntax = new CharScannerSyntaxBean();
@@ -337,7 +337,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
    * quote and {@link CharScannerSyntax#isAltQuoteEscapeLazy() lazy alt-quote}.
    */
   @Test
-  public void testReadUntilWithSyntaxAltDobuleQuotesLazy() {
+  void testReadUntilWithSyntaxAltDobuleQuotesLazy() {
 
     // arrange
     CharScannerSyntaxBean syntax = new CharScannerSyntaxBean();
@@ -356,7 +356,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
    * Test of {@link CharStreamScanner#readUntil(CharFilter, boolean)} reading until stop char was hit.
    */
   @Test
-  public void testReadUntilWithCharFilter() {
+  void testReadUntilWithCharFilter() {
 
     // arrange
     String string = " blabla_$";
@@ -373,7 +373,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
    * {@code acceptEnd} was {@code true}.
    */
   @Test
-  public void testReadUntilWithCharFilterEot() {
+  void testReadUntilWithCharFilterEot() {
 
     // arrange
     String string = " blabla_$";
@@ -390,7 +390,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
    * {@code acceptEnd} was {@code false}.
    */
   @Test
-  public void testReadUntilWithCharFilterNoEot() {
+  void testReadUntilWithCharFilterNoEot() {
 
     // arrange
     String string = " blabla_$";
@@ -407,7 +407,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
    * limit overflow.
    */
   @Test
-  public void testReadUntilWithCharFilterAndStopString() {
+  void testReadUntilWithCharFilterAndStopString() {
 
     // arrange
     String string = " blabla_$\n";
@@ -423,25 +423,25 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   }
 
   @Test
-  public void testReadLong() {
+  void testReadLong() {
 
     new NumberScannerLong(s -> scanner(s, 2)).test();
   }
 
   @Test
-  public void testReadInteger() {
+  void testReadInteger() {
 
     new NumberScannerInteger(s -> scanner(s, 2)).test();
   }
 
   @Test
-  public void testReadDouble() {
+  void testReadDouble() {
 
     new NumberScannerDouble(s -> scanner(s, 9)).test();
   }
 
   @Test
-  public void testReadDoubles() {
+  void testReadDoubles() {
 
     // arrange
     String string = "123456789-987654321+0.123e-10xyz";
@@ -457,7 +457,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   }
 
   @Test
-  public void testReadDoubleLang() {
+  void testReadDoubleLang() {
 
     checkDoubleString("-9.87654321098765432109876543210");
     checkDoubleString("-2.2250738585072012e+307");
@@ -529,7 +529,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   }
 
   @Test
-  public void testReadDoubleNonNumbers() {
+  void testReadDoubleNonNumbers() {
 
     checkDouble("NaN");
     checkDouble("+NaN");
@@ -571,13 +571,13 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   }
 
   @Test
-  public void testReadFloat() {
+  void testReadFloat() {
 
     new NumberScannerFloat(s -> scanner(s, 9)).test();
   }
 
   @Test
-  public void testReadFloats() {
+  void testReadFloats() {
 
     // arrange
     String string = "123456789-987654321+0.123e-10xyz";
@@ -597,7 +597,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
    * using all features in combination.
    */
   @Test
-  public void testReadUntilWithSyntaxFull() {
+  void testReadUntilWithSyntaxFull() {
 
     // arrange (full syntax)
     CharScannerSyntaxBean syntax = new CharScannerSyntaxBean() {
@@ -672,7 +672,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   }
 
   @Test
-  public void testExpectPositive() {
+  void testExpectPositive() {
 
     // arrange
     String start = "hello ";
@@ -691,7 +691,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   }
 
   @Test
-  public void testExpectStrict() {
+  void testExpectStrict() {
 
     // arrange
     String string = "Hello World!";
@@ -714,7 +714,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   }
 
   @Test
-  public void testExpectNegative() {
+  void testExpectNegative() {
 
     // arrange
     String string = "string";
@@ -730,7 +730,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   }
 
   @Test
-  public void testNext() {
+  void testNext() {
 
     // arrange
     String string = "0123456789";
@@ -751,7 +751,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   }
 
   @Test
-  public void testReadWhile() {
+  void testReadWhile() {
 
     // arrange
     String string = "abc def  ghi";
@@ -775,7 +775,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   }
 
   @Test
-  public void testPeekWhile() {
+  void testPeekWhile() {
 
     // arrange
     String string = "abc def  ghi";
@@ -797,7 +797,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   }
 
   @Test
-  public void testReadLine() {
+  void testReadLine() {
 
     // arrange
     String string = "abc\ndef\rghi\r\njkl\n\rend";
@@ -842,7 +842,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   }
 
   @Test
-  public void testReadLineWithTrim() {
+  void testReadLineWithTrim() {
 
     // arrange
     String string = "  ab c \ndef\r ghi\r\nj k l\n \r \n  \r\n   end";
@@ -860,7 +860,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   }
 
   @Test
-  public void testReadDigit() {
+  void testReadDigit() {
 
     // arrange
     String string = "01234567890a ";
@@ -881,7 +881,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   }
 
   @Test
-  public void testPeek() {
+  void testPeek() {
 
     // arrange
     String string = "abc";
@@ -903,7 +903,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   }
 
   @Test
-  public void testExpect() {
+  void testExpect() {
 
     // arrange
     String string = "public static final String foo;";
@@ -931,7 +931,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   }
 
   @Test
-  public void testEmpty() {
+  void testEmpty() {
 
     // arrange
     String string = "";
@@ -971,7 +971,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
    * Tests {@link CharStreamScanner#readJavaStringLiteral()}.
    */
   @Test
-  public void testReadJavaStringLiteral() {
+  void testReadJavaStringLiteral() {
 
     // arrange
     String string = "\"Hi \\\"\\176\\477\\579\\u2022\\uuuuu2211\\\"\\n\"";
@@ -990,7 +990,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
    * Tests {@link CharStreamScanner#readJavaStringLiteral()} with invald data.
    */
   @Test
-  public void testReadJavaStringLiteralErrors() {
+  void testReadJavaStringLiteralErrors() {
 
     readJavaStringLiteralInvalid("\"", null, "");
     readJavaStringLiteralInvalid("\"a", null, "a");
@@ -1032,7 +1032,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
    * Tests {@link CharStreamScanner#readJavaCharLiteral()}.
    */
   @Test
-  public void testReadJavaCharLiteral() {
+  void testReadJavaCharLiteral() {
 
     // arrange
     String string = "'a'$'\\''$'\\\\'$'\\0'$'\\47'$'\\176'$'\\u2022'$";
@@ -1080,7 +1080,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
    * Tests {@link CharStreamScanner#readJavaCharLiteral()} with invalid data.
    */
   @Test
-  public void testReadJavaCharLiteralErrors() {
+  void testReadJavaCharLiteralErrors() {
 
     readJavaCharLiteralInvalid("'", "'");
     readJavaCharLiteralInvalid("'a", "'a");
@@ -1114,7 +1114,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
   }
 
   @Test
-  public void testUnicode() {
+  void testUnicode() {
 
     // arrange
     String gClev = "\uD834\uDD1E";

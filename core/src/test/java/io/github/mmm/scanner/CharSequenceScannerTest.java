@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
  * Test of {@link CharSequenceScanner}.
  */
 @SuppressWarnings("all")
-public class CharSequenceScannerTest extends AbstractCharStreamScannerTest {
+class CharSequenceScannerTest extends AbstractCharStreamScannerTest {
 
   @Override
   protected CharStreamScanner scanner(String string, int capacity) {
@@ -20,7 +20,7 @@ public class CharSequenceScannerTest extends AbstractCharStreamScannerTest {
    * Tests {@link CharSequenceScanner#readUntil(char, boolean)}.
    */
   @Test
-  public void testReadUntilWithSetCurrentIndex() {
+  void testReadUntilWithSetCurrentIndex() {
 
     CharSequenceScanner scanner;
     // not escaped
@@ -42,7 +42,7 @@ public class CharSequenceScannerTest extends AbstractCharStreamScannerTest {
   }
 
   @Test
-  public void testBasic() {
+  void testBasic() {
 
     String string = "string";
     CharSequenceScanner parser = new CharSequenceScanner(string);
@@ -61,7 +61,7 @@ public class CharSequenceScannerTest extends AbstractCharStreamScannerTest {
   }
 
   @Test
-  public void testSubstring() {
+  void testSubstring() {
 
     String string = "string";
     CharSequenceScanner parser = new CharSequenceScanner(string);
@@ -73,7 +73,7 @@ public class CharSequenceScannerTest extends AbstractCharStreamScannerTest {
   }
 
   @Test
-  public void testGetReplaced() {
+  void testGetReplaced() {
 
     String start = "hello ";
     String middle = "world";
