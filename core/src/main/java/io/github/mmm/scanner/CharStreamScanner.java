@@ -885,13 +885,27 @@ public interface CharStreamScanner extends TextFormatProcessor, AutoCloseable {
   default void requireOne(int expected) throws IllegalStateException {
 
     if (!hasNext()) {
-      throw new IllegalStateException("Expecting '" + expected + "' but found end-of-stream.");
+      fail(expected, 0);
     }
     int next = peek();
     if (next != expected) {
-      throw new IllegalStateException("Expecting '" + expected + "' but found: " + next);
+      fail(expected, next);
     }
     next();
+  }
+
+  private void fail(int expected, int next) {
+
+    StringBuilder sb = new StringBuilder(32);
+    sb.append("Expecting '");
+    sb.appendCodePoint(expected);
+    sb.append("' but found: ");
+    if (next == 0) {
+      sb.append("end-of-stream");
+    } else {
+      sb.appendCodePoint(next);
+    }
+    throw new IllegalStateException(sb.toString());
   }
 
   /**
