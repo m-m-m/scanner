@@ -367,7 +367,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
         if (len > 0) {
           // append rest
           StringBuilder builder;
-          if (state.activeEntityEnd == 0) {
+          if (state.activeEntityEnd == EOS) {
             builder = state.builder;
           } else {
             builder = state.getEntityBuilder();
@@ -1553,11 +1553,11 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
       this.builder = builder(null);
       this.start = AbstractCharStreamScanner.this.offset;
       this.escapeActive = false;
-      this.activeQuoteEnd = 0;
-      this.activeQuoteEscape = 0;
+      this.activeQuoteEnd = EOS;
+      this.activeQuoteEscape = EOS;
       this.activeQuoteLazy = false;
-      this.activeQuoteLazyEnd = 0;
-      this.activeEntityEnd = 0;
+      this.activeQuoteLazyEnd = EOS;
+      this.activeEntityEnd = EOS;
       this.quoteEscapeActive = false;
       this.done = false;
     }
@@ -1573,14 +1573,18 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     private void parse(int codePoint) {
 
       boolean append = false;
+      int mappedCodePoint = codePoint;
       if (this.escapeActive) {
         // current character c was escaped
-        // it will be taken as is on the next append
+        // it will be taken on the next append
+        if ((this.escape != this.quoteStart) && (this.escape != this.altQuoteStart)) {
+          mappedCodePoint = this.syntax.mapEscaped(codePoint);
+        }
         this.escapeActive = false;
-      } else if (this.activeQuoteEnd != 0) {
+      } else if (this.activeQuoteEnd != EOS) {
         // parse quote
-        if ((this.activeQuoteLazyEnd != 0) && (codePoint == this.activeQuoteLazyEnd)) {
-          this.activeQuoteEnd = 0;
+        if ((this.activeQuoteLazyEnd != EOS) && (codePoint == this.activeQuoteLazyEnd)) {
+          this.activeQuoteEnd = EOS;
           this.builder.appendCodePoint(codePoint); // quote (was escaped lazily)
           this.start = AbstractCharStreamScanner.this.offset + 1;
         } else if (this.quoteEscapeActive) {
@@ -1590,26 +1594,24 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
             this.start = AbstractCharStreamScanner.this.offset + 1;
           } else if (this.activeQuoteEscape == this.activeQuoteEnd) {
             // quotation done
-            this.activeQuoteEnd = 0;
+            this.activeQuoteEnd = EOS;
             this.start = AbstractCharStreamScanner.this.offset;
           }
-        } else if ((codePoint == this.activeQuoteEscape)
-        // && (!this.activeQuoteLazy || (this.activeQuoteEscape != this.activeQuoteEnd))
-        ) {
+        } else if ((codePoint == this.activeQuoteEscape)) {
           // escape in quote
           append = true;
           this.quoteEscapeActive = true;
         } else if (codePoint == this.activeQuoteEnd) {
           // quotation done
-          this.activeQuoteEnd = 0;
+          this.activeQuoteEnd = EOS;
           append = true;
         }
-        this.activeQuoteLazyEnd = 0;
-      } else if (this.activeEntityEnd != 0) {
+        this.activeQuoteLazyEnd = EOS;
+      } else if (this.activeEntityEnd != EOS) {
         // parse entity
         if (codePoint == this.activeEntityEnd) {
           // entity end detected...
-          this.activeEntityEnd = 0;
+          this.activeEntityEnd = EOS;
           int len = AbstractCharStreamScanner.this.offset - this.start;
           String entity;
           if (this.entityBuilder == null) {
@@ -1641,7 +1643,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
           this.activeQuoteEscape = this.altQuoteEscape;
           this.activeQuoteLazy = this.altQuoteEscapeLazy;
         }
-        if (this.activeQuoteEnd != 0) {
+        if (this.activeQuoteEnd != EOS) {
           this.quoteEscapeActive = false;
           append = true;
           if (this.activeQuoteLazy && (this.activeQuoteEnd == this.activeQuoteEscape)
@@ -1654,6 +1656,12 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
         if (AbstractCharStreamScanner.this.offset > this.start) {
           this.builder.append(AbstractCharStreamScanner.this.buffer, this.start, AbstractCharStreamScanner.this.offset);
         }
+        this.start = AbstractCharStreamScanner.this.offset + 1;
+      } else if (mappedCodePoint != codePoint) {
+        if (AbstractCharStreamScanner.this.offset > this.start) {
+          this.builder.append(AbstractCharStreamScanner.this.buffer, this.start, AbstractCharStreamScanner.this.offset);
+        }
+        this.builder.appendCodePoint(mappedCodePoint);
         this.start = AbstractCharStreamScanner.this.offset + 1;
       }
     }

@@ -14,7 +14,7 @@ public interface CharScannerSyntax {
    * quote-end} character. The text inside the quote is taken as is (without the quote characters). <br>
    * Common examples for quote characters are the single quotes ({@code '}) and double quotes ({@code "}).
    *
-   * @return the character used to start a quotation or {@code '\0'} to disable.
+   * @return the character used to start a quotation or {@link CharStreamScanner#EOS -1} to disable.
    */
   int getQuoteStart();
 
@@ -23,7 +23,7 @@ public interface CharScannerSyntax {
    *
    * @see #getQuoteStart()
    *
-   * @return the character used to end a quotation or {@code '\0'} to disable.
+   * @return the character used to end a quotation or {@link CharStreamScanner#EOS -1} to disable.
    */
   int getQuoteEnd();
 
@@ -59,7 +59,7 @@ public interface CharScannerSyntax {
    *
    * @see #getEntityStart()
    *
-   * @return the escape character or {@code '\0'} for no escaping.
+   * @return the escape character or {@link CharStreamScanner#EOS -1} for no escaping.
    */
   int getEscape();
 
@@ -101,7 +101,8 @@ public interface CharScannerSyntax {
    * </tr>
    * </table>
    *
-   * @return the character used to escape the {@link #getQuoteEnd() quote-end} character or {@code '\0'} to disable.
+   * @return the character used to escape the {@link #getQuoteEnd() quote-end} character or {@link CharStreamScanner#EOS
+   *         -1} to disable.
    */
   int getQuoteEscape();
 
@@ -185,7 +186,7 @@ public interface CharScannerSyntax {
    *
    * @see #getQuoteStart()
    *
-   * @return the alternative character used to start a quotation or {@code '\0'} to disable.
+   * @return the alternative character used to start a quotation or {@link CharStreamScanner#EOS -1} to disable.
    */
   int getAltQuoteStart();
 
@@ -204,7 +205,8 @@ public interface CharScannerSyntax {
    *
    * @see #getQuoteEscape()
    *
-   * @return the character used to escape the {@link #getQuoteEnd() quote-end} character or {@code '\0'} to disable.
+   * @return the character used to escape the {@link #getQuoteEnd() quote-end} character or {@link CharStreamScanner#EOS
+   *         -1} to disable.
    */
   int getAltQuoteEscape();
 
@@ -224,7 +226,7 @@ public interface CharScannerSyntax {
    * {@link #getEntityStart() entity-start} and {@link #getEntityEnd() entity-end}. It will be decoded by
    * {@link #resolveEntity(String)}.
    *
-   * @return the character used to start an entity or {@code '\0'} to disable.
+   * @return the character used to start an entity or {@link CharStreamScanner#EOS -1} to disable.
    */
   int getEntityStart();
 
@@ -238,15 +240,64 @@ public interface CharScannerSyntax {
   int getEntityEnd();
 
   /**
+   * @param codePoint the {@link String#codePointAt(int) code-point} that was escaped.
+   * @return the mapped {@link String#codePointAt(int) code-point}. E.g. if "\\n" was parsed and escape was '\\' then
+   *         this method is called with 'n' as argument and may return '\n'.
+   */
+  default int mapEscaped(int codePoint) {
+
+    return switch (codePoint) {
+      case 'b' -> '\b';
+      case 'f' -> '\f';
+      case 'n' -> '\n';
+      case 'r' -> '\r';
+      case 's' -> '\s';
+      case 't' -> '\t';
+      case '0' -> '\0';
+      default -> codePoint;
+    };
+  }
+
+  /**
    * This method resolves the given {@code entity}. <br>
    * E.g. if {@link #getEntityStart() entity-start} is {@code '&'} and {@link #getEntityEnd()} is {@code ';'} then if
    * the string {@code "&lt;"} is scanned, this method is called with {@code "lt"} as {@code entity} argument and may
-   * return {@code "<"}.
+   * return {@code "<"}. <br>
+   * <b>ATTENTION:</b><br>
+   * You need to override this method if you want to use entities.
    *
    * @param entity is the entity string that was found surrounded by {@link #getEntityStart() entity-start} and
    *        {@link #getEntityEnd() entity-end} excluding these characters.
    * @return the decoded entity.
    */
-  String resolveEntity(String entity);
+  default String resolveEntity(String entity) {
+
+    throw new IllegalArgumentException(entity);
+  }
+
+  /**
+   * @return the {@link CharScannerSyntax} using single quotes ('\'') with backslash to {@link #getEscape() escape}.
+   */
+  static CharScannerSyntax getSingleQuotes() {
+
+    return CharScannerSyntaxType.SINGLE_QUOTE;
+  }
+
+  /**
+   * @return the {@link CharScannerSyntax} using double quotes ('"') with backslash to {@link #getEscape() escape}.
+   */
+  static CharScannerSyntax getDoubleQuotes() {
+
+    return CharScannerSyntaxType.SINGLE_QUOTE;
+  }
+
+  /**
+   * @return the {@link CharScannerSyntax} using both single and double quotes with backslash to {@link #getEscape()
+   *         escape}.
+   */
+  static CharScannerSyntax getBothQuotes() {
+
+    return CharScannerSyntaxType.BOTH_QUOTES;
+  }
 
 }

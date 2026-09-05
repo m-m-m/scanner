@@ -2,6 +2,9 @@
  * http://www.apache.org/licenses/LICENSE-2.0 */
 package io.github.mmm.scanner;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * This is the implementation of {@link CharScannerSyntax} as Java bean. <br>
  * The actual {@code char}s like {@link #getEscape() escape} are realized as simple bean-properties and initialized with
@@ -33,15 +36,17 @@ public class CharScannerSyntaxBean implements CharScannerSyntax {
 
   private int entityEnd;
 
+  private Map<Integer, Integer> escapeMap;
+
   /**
    * The constructor.
    */
   public CharScannerSyntaxBean() {
 
     super();
-    this.escape = '\0';
-    this.quoteStart = '\0';
-    this.quoteEnd = '\0';
+    this.escape = CharStreamScanner.EOS;
+    this.quoteStart = CharStreamScanner.EOS;
+    this.quoteEnd = CharStreamScanner.EOS;
   }
 
   @Override
@@ -223,14 +228,30 @@ public class CharScannerSyntaxBean implements CharScannerSyntax {
     this.entityEnd = entityEnd;
   }
 
-  /**
-   * {@inheritDoc} <br>
-   * <b>ATTENTION:</b><br>
-   * You need to override this method if you want to {@link #setEntityStart(int) use} entities.
-   */
   @Override
-  public String resolveEntity(String entity) {
+  public int mapEscaped(int codePoint) {
 
-    throw new IllegalArgumentException(entity);
+    if (this.escapeMap != null) {
+      Integer result = this.escapeMap.get(codePoint);
+      if (result != null) {
+        return result.intValue();
+      }
+    }
+    return CharScannerSyntax.super.mapEscaped(codePoint);
   }
+
+  /**
+   * Adds a custom mapping to {@link #mapEscaped(int)}.
+   *
+   * @param sourceCp the source {@link String#codePointAt(int) code-point}.
+   * @param targetCp the mapped target {@link String#codePointAt(int) code-point}.
+   */
+  public void addEscapeMapping(int sourceCp, int targetCp) {
+
+    if (this.escapeMap == null) {
+      this.escapeMap = new HashMap<>();
+    }
+    this.escapeMap.put(sourceCp, targetCp);
+  }
+
 }

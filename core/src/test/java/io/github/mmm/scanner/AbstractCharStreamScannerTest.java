@@ -258,7 +258,7 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
 
     // arrange
     String end = "12345";
-    String string = "\"Quotet text with \\\" inside!\"" + end;
+    String string = "\"Quotet text with \\\" and \\n inside!\"" + end;
     CharScannerSyntaxBean syntax = new CharScannerSyntaxBean();
     syntax.setEscape('\\');
     // act
@@ -269,14 +269,14 @@ public abstract class AbstractCharStreamScannerTest extends Assertions {
     assertThat(scanner.getColumn()).isEqualTo(2);
     assertThat(scanner.getLine()).isEqualTo(1);
     String result = scanner.readUntil('\"', false, syntax);
-    assertThat(result).isEqualTo("Quotet text with \" inside!");
-    assertThat(scanner.getPosition()).isEqualTo(29);
-    assertThat(scanner.getColumn()).isEqualTo(30);
+    assertThat(result).isEqualTo("Quotet text with \" and \n inside!");
+    assertThat(scanner.getPosition()).isEqualTo(36);
+    assertThat(scanner.getColumn()).isEqualTo(37);
     assertThat(scanner.getLine()).isEqualTo(1);
     assertThat(scanner.expectUnsafe(end, false)).isTrue();
     assertThat(scanner.hasNext()).isFalse();
-    assertThat(scanner.getPosition()).isEqualTo(34);
-    assertThat(scanner.getColumn()).isEqualTo(35);
+    assertThat(scanner.getPosition()).isEqualTo(string.length());
+    assertThat(scanner.getColumn()).isEqualTo(string.length() + 1);
     assertThat(scanner.getLine()).isEqualTo(1);
   }
 
