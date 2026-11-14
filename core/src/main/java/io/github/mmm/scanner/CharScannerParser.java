@@ -2,8 +2,8 @@ package io.github.mmm.scanner;
 
 import java.io.Reader;
 
-/// Interface of a parser the can [parse][#parse(String)] a Java object from a [string
- representation][Object#toString()].
+/// Interface of a parser the can [parse][#parse(String)] a Java object from a
+/// [string representation][Object#toString()].
 ///
 /// @param <T> type of the java object to parse to.
 /// @since 1.0.0
