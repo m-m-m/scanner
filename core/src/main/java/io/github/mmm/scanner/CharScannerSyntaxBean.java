@@ -5,13 +5,11 @@ package io.github.mmm.scanner;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * This is the implementation of {@link CharScannerSyntax} as Java bean. <br>
- * The actual {@code char}s like {@link #getEscape() escape} are realized as simple bean-properties and initialized with
- * <code>'\0'</code> so they are disabled by default.
- *
- * @see CharStreamScanner#readUntil(int, boolean, CharScannerSyntax)
- */
+/// This is the implementation of [CharScannerSyntax] as Java bean.
+/// The actual `char`s like [escape][#getEscape()] are realized as simple bean-properties and initialized with
+/// `'\0'` so they are disabled by default.
+///
+/// @see CharStreamScanner#readUntil(int, boolean, CharScannerSyntax)
 public class CharScannerSyntaxBean implements CharScannerSyntax {
 
   private int escape;
@@ -38,9 +36,7 @@ public class CharScannerSyntaxBean implements CharScannerSyntax {
 
   private Map<Integer, Integer> escapeMap;
 
-  /**
-   * The constructor.
-   */
+  /// The constructor.
   public CharScannerSyntaxBean() {
 
     super();
@@ -55,9 +51,7 @@ public class CharScannerSyntaxBean implements CharScannerSyntax {
     return this.escape;
   }
 
-  /**
-   * @param escape is the {@link #getEscape() escape} to set.
-   */
+  /// @param escape is the [escape][#getEscape()] to set.
   public void setEscape(int escape) {
 
     this.escape = escape;
@@ -69,9 +63,7 @@ public class CharScannerSyntaxBean implements CharScannerSyntax {
     return this.quoteStart;
   }
 
-  /**
-   * @param quoteStart is the {@link #getQuoteStart() quoteStart} to set.
-   */
+  /// @param quoteStart is the [quoteStart][#getQuoteStart()] to set.
   public void setQuoteStart(int quoteStart) {
 
     this.quoteStart = quoteStart;
@@ -83,19 +75,15 @@ public class CharScannerSyntaxBean implements CharScannerSyntax {
     return this.quoteEnd;
   }
 
-  /**
-   * @param quoteEnd is the {@link #getQuoteEnd() quoteEnd} to set.
-   */
+  /// @param quoteEnd is the [quoteEnd][#getQuoteEnd()] to set.
   public void setQuoteEnd(int quoteEnd) {
 
     this.quoteEnd = quoteEnd;
   }
 
-  /**
-   * This method sets both the {@link #getQuoteStart() quote-start} and {@link #getQuoteEnd() quote-end} character.
-   *
-   * @param quote the quote character to set.
-   */
+  /// This method sets both the [quote-start][#getQuoteStart()] and [quote-end][#getQuoteEnd()] character.
+  ///
+  /// @param quote the quote character to set.
   public void setQuote(int quote) {
 
     this.quoteStart = quote;
@@ -108,9 +96,7 @@ public class CharScannerSyntaxBean implements CharScannerSyntax {
     return this.quoteEscape;
   }
 
-  /**
-   * @param quoteEscape is the {@link #getQuoteEnd() quote-escape} to set.
-   */
+  /// @param quoteEscape is the [quote-escape][#getQuoteEnd()] to set.
   public void setQuoteEscape(int quoteEscape) {
 
     this.quoteEscape = quoteEscape;
@@ -122,9 +108,7 @@ public class CharScannerSyntaxBean implements CharScannerSyntax {
     return this.quoteEscapeLazy;
   }
 
-  /**
-   * @param quoteEscapeLazy the {@link #isQuoteEscapeLazy() quote-escape-lazy} flag to set
-   */
+  /// @param quoteEscapeLazy the [quote-escape-lazy][#isQuoteEscapeLazy()] flag to set
   public void setQuoteEscapeLazy(boolean quoteEscapeLazy) {
 
     this.quoteEscapeLazy = quoteEscapeLazy;
@@ -136,9 +120,7 @@ public class CharScannerSyntaxBean implements CharScannerSyntax {
     return this.altQuoteStart;
   }
 
-  /**
-   * @param alternativeQuoteStart is the {@link #getAltQuoteStart() alt-quote-start} character to set.
-   */
+  /// @param alternativeQuoteStart is the [alt-quote-start][#getAltQuoteStart()] character to set.
   public void setAltQuoteStart(int alternativeQuoteStart) {
 
     this.altQuoteStart = alternativeQuoteStart;
@@ -150,22 +132,18 @@ public class CharScannerSyntaxBean implements CharScannerSyntax {
     return this.altQuoteEnd;
   }
 
-  /**
-   * This method sets the {@link #getAltQuoteEnd() alt-quote-end} character.
-   *
-   * @param alternativeQuoteEnd is the {@link #getAltQuoteEnd() alt-quote-end} character.
-   */
+  /// This method sets the [alt-quote-end][#getAltQuoteEnd()] character.
+  ///
+  /// @param alternativeQuoteEnd is the [alt-quote-end][#getAltQuoteEnd()] character.
   public void setAltQuoteEnd(int alternativeQuoteEnd) {
 
     this.altQuoteEnd = alternativeQuoteEnd;
   }
 
-  /**
-   * This method sets both the {@link #getAltQuoteStart() alt-quote-start} and {@link #getAltQuoteEnd() alt-quote-end}
-   * character.
-   *
-   * @param altQuote the alt-quote character to set.
-   */
+  /// This method sets both the [alt-quote-start][#getAltQuoteStart()] and [alt-quote-end][#getAltQuoteEnd()]
+  /// character.
+  ///
+  /// @param altQuote the alt-quote character to set.
   public void setAltQuote(int altQuote) {
 
     this.altQuoteStart = altQuote;
@@ -178,9 +156,7 @@ public class CharScannerSyntaxBean implements CharScannerSyntax {
     return this.altQuoteEscape;
   }
 
-  /**
-   * @param altQuoteEscape is the {@link #getAltQuoteEscape() alt-quote-escape} to set.
-   */
+  /// @param altQuoteEscape is the [alt-quote-escape][#getAltQuoteEscape()] to set.
   public void setAltQuoteEscape(int altQuoteEscape) {
 
     this.altQuoteEscape = altQuoteEscape;
@@ -192,9 +168,7 @@ public class CharScannerSyntaxBean implements CharScannerSyntax {
     return this.altQuoteEscapeLazy;
   }
 
-  /**
-   * @param altQuoteEscapeLazy the {@link #isAltQuoteEscapeLazy() alt-quote-lazy} flag to set
-   */
+  /// @param altQuoteEscapeLazy the [alt-quote-lazy][#isAltQuoteEscapeLazy()] flag to set
   public void setAltQuoteEscapeLazy(boolean altQuoteEscapeLazy) {
 
     this.altQuoteEscapeLazy = altQuoteEscapeLazy;
@@ -206,9 +180,7 @@ public class CharScannerSyntaxBean implements CharScannerSyntax {
     return this.entityStart;
   }
 
-  /**
-   * @param entityStart the {@link #getEntityStart() entity-start} to set.
-   */
+  /// @param entityStart the [entity-start][#getEntityStart()] to set.
   public void setEntityStart(int entityStart) {
 
     this.entityStart = entityStart;
@@ -220,9 +192,7 @@ public class CharScannerSyntaxBean implements CharScannerSyntax {
     return this.entityEnd;
   }
 
-  /**
-   * @param entityEnd the {@link #getEntityEnd() entity-end} to set.
-   */
+  /// @param entityEnd the [entity-end][#getEntityEnd()] to set.
   public void setEntityEnd(int entityEnd) {
 
     this.entityEnd = entityEnd;
@@ -240,12 +210,10 @@ public class CharScannerSyntaxBean implements CharScannerSyntax {
     return CharScannerSyntax.super.mapEscaped(codePoint);
   }
 
-  /**
-   * Adds a custom mapping to {@link #mapEscaped(int)}.
-   *
-   * @param sourceCp the source {@link String#codePointAt(int) code-point}.
-   * @param targetCp the mapped target {@link String#codePointAt(int) code-point}.
-   */
+  /// Adds a custom mapping to [#mapEscaped(int)].
+  ///
+  /// @param sourceCp the source [code-point][String#codePointAt(int)].
+  /// @param targetCp the mapped target [code-point][String#codePointAt(int)].
   public void addEscapeMapping(int sourceCp, int targetCp) {
 
     if (this.escapeMap == null) {

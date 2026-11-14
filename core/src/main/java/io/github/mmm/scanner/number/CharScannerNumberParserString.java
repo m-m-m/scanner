@@ -3,37 +3,31 @@ package io.github.mmm.scanner.number;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-/**
- * {@link CharScannerNumberParser} to parse java.lang {@link Number} values such as {@link Long}, {@link Integer},
- * {@link Double} or {@link Float}.
- */
+/// [CharScannerNumberParser] to parse java.lang [Number] values such as [Long], [Integer],
+/// [Double] or [Float].
 public class CharScannerNumberParserString extends CharScannerNumberParserBase {
 
   private final boolean acceptDecimal;
 
   private final boolean addRadix;
 
-  /**
-   * The constructor.
-   *
-   * @param radixMode the {@link CharScannerRadixHandler} for {@link #radix(int, char)}.
-   * @param acceptDecimal - {@code true} to accept decimal numbers ({@link BigDecimal}), {@code false} otherwise.
-   * @param addRadix - {@code true} to append the radix syntax to the number {@link String}, {@code false} otherwise.
-   */
+  /// The constructor.
+  ///
+  /// @param radixMode the [CharScannerRadixHandler] for [#radix(int, char)].
+  /// @param acceptDecimal - `true` to accept decimal numbers ([BigDecimal]), `false` otherwise.
+  /// @param addRadix - `true` to append the radix syntax to the number [String], `false` otherwise.
   public CharScannerNumberParserString(CharScannerRadixHandler radixMode, boolean acceptDecimal, boolean addRadix) {
 
     this(radixMode, acceptDecimal, addRadix, "", false);
   }
 
-  /**
-   * The constructor.
-   *
-   * @param radixMode the {@link CharScannerRadixHandler} for {@link #radix(int, char)}.
-   * @param acceptDecimal - {@code true} to accept decimal numbers ({@link BigDecimal}), {@code false} otherwise.
-   * @param addRadix - {@code true} to append the radix syntax to the number {@link String}, {@code false} otherwise.
-   * @param delimiters the {@link String} with the accepted delimiter characters (e.g. "", "_", or "_,").
-   * @param supportSpecials - {@code true} to support special numbers like NaN or Infinity.
-   */
+  /// The constructor.
+  ///
+  /// @param radixMode the [CharScannerRadixHandler] for [#radix(int, char)].
+  /// @param acceptDecimal - `true` to accept decimal numbers ([BigDecimal]), `false` otherwise.
+  /// @param addRadix - `true` to append the radix syntax to the number [String], `false` otherwise.
+  /// @param delimiters the [String] with the accepted delimiter characters (e.g. "", "_", or "_,").
+  /// @param supportSpecials - `true` to support special numbers like NaN or Infinity.
   public CharScannerNumberParserString(CharScannerRadixHandler radixMode, boolean acceptDecimal, boolean addRadix,
       String delimiters, boolean supportSpecials) {
 
@@ -62,9 +56,7 @@ public class CharScannerNumberParserString extends CharScannerNumberParserBase {
     return this.builder.length() == 0;
   }
 
-  /**
-   * @return the number as {@link BigDecimal}.
-   */
+  /// @return the number as [BigDecimal].
   public BigDecimal asBigDecimal() {
 
     if (isEmpty()) {
@@ -74,9 +66,7 @@ public class CharScannerNumberParserString extends CharScannerNumberParserBase {
     return new BigDecimal(this.builder.toString());
   }
 
-  /**
-   * @return the number as {@link BigInteger}.
-   */
+  /// @return the number as [BigInteger].
   public BigInteger asBigInteger() {
 
     if (isEmpty()) {
@@ -85,9 +75,7 @@ public class CharScannerNumberParserString extends CharScannerNumberParserBase {
     return new BigInteger(this.builder.toString(), this.radix);
   }
 
-  /**
-   * @return the number as {@link Double} or {@code null} if no number was found.
-   */
+  /// @return the number as [Double] or `null` if no number was found.
   public Double asDouble() {
 
     if (isEmpty()) {
@@ -101,9 +89,7 @@ public class CharScannerNumberParserString extends CharScannerNumberParserBase {
     }
   }
 
-  /**
-   * @return the number as {@link Float} or {@code null} if no number was found.
-   */
+  /// @return the number as [Float] or `null` if no number was found.
   public Float asFloat() {
 
     if (isEmpty()) {
@@ -112,9 +98,7 @@ public class CharScannerNumberParserString extends CharScannerNumberParserBase {
     return Float.valueOf(this.builder.toString());
   }
 
-  /**
-   * @return the number as {@link String} or {@code null} if no number was found.
-   */
+  /// @return the number as [String] or `null` if no number was found.
   public String asString() {
 
     if (isEmpty()) {

@@ -5,86 +5,72 @@ package io.github.mmm.scanner;
 import io.github.mmm.base.filter.CharFilter;
 import io.github.mmm.base.text.TextFormatMessageHandler;
 
-/**
- * Implementation of {@link CharStreamScanner} based on {@link String}.
- *
- * @since 1.0.0
- */
+/// Implementation of [CharStreamScanner] based on [String].
+///
+/// @since 1.0.0
 public class CharSequenceScanner extends AbstractCharStreamScanner {
 
   private String string;
 
-  /** The initial {@link #offset} in the {@link #buffer}. */
+  /// The initial [#offset] in the [#buffer].
   private final int initialOffset;
 
-  /**
-   * The constructor.
-   *
-   * @param charSequence is the {@link #getOriginalString() string} to scan.
-   */
+  /// The constructor.
+  ///
+  /// @param charSequence is the [string][#getOriginalString()] to scan.
   public CharSequenceScanner(CharSequence charSequence) {
 
     this(charSequence, null);
   }
 
-  /**
-   * The constructor.
-   *
-   * @param charSequence is the {@link #getOriginalString() string} to scan.
-   * @param messageHandler the {@link TextFormatMessageHandler}.
-   */
+  /// The constructor.
+  ///
+  /// @param charSequence is the [string][#getOriginalString()] to scan.
+  /// @param messageHandler the [TextFormatMessageHandler].
   public CharSequenceScanner(CharSequence charSequence, TextFormatMessageHandler messageHandler) {
 
     this(charSequence.toString(), messageHandler);
   }
 
-  /**
-   * The constructor.
-   *
-   * @param string is the {@link #getOriginalString() string} to parse.
-   */
+  /// The constructor.
+  ///
+  /// @param string is the [string][#getOriginalString()] to parse.
   public CharSequenceScanner(String string) {
 
     this(string, null);
   }
 
-  /**
-   * The constructor.
-   *
-   * @param string is the {@link #getOriginalString() string} to parse.
-   * @param messageHandler the {@link TextFormatMessageHandler}.
-   */
+  /// The constructor.
+  ///
+  /// @param string is the [string][#getOriginalString()] to parse.
+  /// @param messageHandler the [TextFormatMessageHandler].
   public CharSequenceScanner(String string, TextFormatMessageHandler messageHandler) {
 
     this(string, messageHandler, 1, 1);
   }
 
-  /**
-   * The constructor.
-   *
-   * @param string is the {@link #getOriginalString() string} to parse.
-   * @param messageHandler the {@link TextFormatMessageHandler}.
-   * @param line the initial {@link #getLine() line}.
-   * @param column the initial {@link #getColumn() column}.
-   */
+  /// The constructor.
+  ///
+  /// @param string is the [string][#getOriginalString()] to parse.
+  /// @param messageHandler the [TextFormatMessageHandler].
+  /// @param line the initial [line][#getLine()].
+  /// @param column the initial [column][#getColumn()].
   public CharSequenceScanner(String string, TextFormatMessageHandler messageHandler, int line, int column) {
 
     this(string, 0, string.length(), messageHandler, line, column);
     this.string = string;
   }
 
-  /**
-   * The constructor.
-   *
-   * @param characters is an array containing the characters to scan.
-   * @param offset is the index of the first char to scan in {@code characters} (typically {@code 0} to start at the
-   *        beginning of the array).
-   * @param length is the {@link #getLength() number of characters} to scan from {@code characters} starting at
-   *        {@code offset} (typically <code>characters.length - offset</code>).
-   * @param messageHandler the {@link TextFormatMessageHandler}.
-   * @param line the initial {@link #getLine() line}.
-   * @param column the initial {@link #getColumn() column}.
-   */
+  /// The constructor.
+  ///
+  /// @param characters is an array containing the characters to scan.
+  /// @param offset is the index of the first char to scan in `characters` (typically `0` to start at the
+  ///        beginning of the array).
+  /// @param length is the [number of characters][#getLength()] to scan from `characters` starting at
+  ///        `offset` (typically `characters.length - offset`).
+  /// @param messageHandler the [TextFormatMessageHandler].
+  /// @param line the initial [line][#getLine()].
+  /// @param column the initial [column][#getColumn()].
   public CharSequenceScanner(String characters, int offset, int length, TextFormatMessageHandler messageHandler,
       int line, int column) {
 
@@ -102,12 +88,10 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
     this.offset = this.initialOffset;
   }
 
-  /**
-   * @see java.lang.CharSequence#charAt(int)
-   *
-   * @param index is the index of the requested character.
-   * @return the character at the given {@code index}.
-   */
+  /// @see java.lang.CharSequence#charAt(int)
+  ///
+  /// @param index is the index of the requested character.
+  /// @return the character at the given `index`.
   public int charAt(int index) {
 
     return this.buffer.codePointAt(this.initialOffset + index);
@@ -119,38 +103,32 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
     return this.offset - this.initialOffset;
   }
 
-  /**
-   * @see java.lang.CharSequence#length()
-   *
-   * @return the total length of the {@link #getOriginalString() string to parse}.
-   */
+  /// @see java.lang.CharSequence#length()
+  ///
+  /// @return the total length of the [string to parse][#getOriginalString()].
   public int getLength() {
 
     return this.limit - this.initialOffset;
   }
 
-  /**
-   * @see String#substring(int, int)
-   *
-   * @param start the start index, inclusive.
-   * @param end the end index, exclusive.
-   * @return the specified substring.
-   */
+  /// @see String#substring(int, int)
+  ///
+  /// @param start the start index, inclusive.
+  /// @param end the end index, exclusive.
+  /// @return the specified substring.
   public String substring(int start, int end) {
 
     return this.buffer.substring(this.initialOffset + start, this.initialOffset + end);
   }
 
-  /**
-   * This method gets the {@link #getOriginalString() original string} where the {@link #substring(int, int) substring}
-   * specified by {@code start} and {@code end} is replaced by {@code substitute}.
-   *
-   * @param substitute is the string used as replacement.
-   * @param start is the inclusive start index of the substring to replace.
-   * @param end is the exclusive end index of the substring to replace.
-   * @return the {@link #getOriginalString() original string} with the specified substring replaced by
-   *         {@code substitute}.
-   */
+  /// This method gets the [original string][#getOriginalString()] where the [substring][#substring(int, int)]
+  /// specified by `start` and `end` is replaced by `substitute`.
+  ///
+  /// @param substitute is the string used as replacement.
+  /// @param start is the inclusive start index of the substring to replace.
+  /// @param end is the exclusive end index of the substring to replace.
+  /// @return the [original string][#getOriginalString()] with the specified substring replaced by
+  ///         `substitute`.
   public String getReplaced(String substitute, int start, int end) {
 
     StringBuilder builder = builder(null);
@@ -160,37 +138,31 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
     return builder.toString();
   }
 
-  /**
-   * This method appends the {@link #substring(int, int) substring} specified by {@code start} and {@code end} to the
-   * given {@code buffer}. <br>
-   * This avoids the overhead of creating a new string and copying the char array.
-   *
-   * @param appendable is the buffer where to append the substring to.
-   * @param start the start index, inclusive.
-   * @param end the end index, exclusive.
-   */
+  /// This method appends the [substring][#substring(int, int)] specified by `start` and `end` to the
+  /// given `buffer`.
+  /// This avoids the overhead of creating a new string and copying the char array.
+  ///
+  /// @param appendable is the buffer where to append the substring to.
+  /// @param start the start index, inclusive.
+  /// @param end the end index, exclusive.
   public void appendSubstring(StringBuilder appendable, int start, int end) {
 
     appendable.append(this.buffer, this.initialOffset + start, end - start);
   }
 
-  /**
-   * This method gets the current position in the stream to scan. It will initially be {@code 0}. In other words this
-   * method returns the number of characters that have already been {@link #next() consumed}.
-   *
-   * @return the current index position.
-   */
+  /// This method gets the current position in the stream to scan. It will initially be `0`. In other words this
+  /// method returns the number of characters that have already been [consumed][#next()].
+  ///
+  /// @return the current index position.
   public int getCurrentIndex() {
 
     return this.offset - this.initialOffset;
   }
 
-  /**
-   * This method sets the {@link #getCurrentIndex() current index}.
-   *
-   * @param index is the next index position to set. The value has to be greater or equal to {@code 0} and less or equal
-   *        to {@link #getLength()} .
-   */
+  /// This method sets the [current index][#getCurrentIndex()].
+  ///
+  /// @param index is the next index position to set. The value has to be greater or equal to `0` and less or equal
+  ///        to [#getLength()] .
   public void setCurrentIndex(int index) {
 
     // yes, index == getLength() is allowed - that is the state when the end is reached and
@@ -239,17 +211,15 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
     return EOS;
   }
 
-  /**
-   * This method peeks the number of {@link #peek() next characters} given by {@code count} and returns them as string.
-   * If there are less characters {@link #hasNext() available} the returned string will be shorter than {@code count}
-   * and only contain the available characters. Unlike {@link #read(int)} this method does NOT consume the characters
-   * and will therefore NOT change the state of this scanner.
-   *
-   * @param count is the number of characters to peek. You may use {@link Integer#MAX_VALUE} to peek until the end of
-   *        text (EOT) if the data-size is suitable.
-   * @return a string with the given number of characters or all available characters if less than {@code count}. Will
-   *         be the empty string if no character is {@link #hasNext() available} at all.
-   */
+  /// This method peeks the number of [next characters][#peek()] given by `count` and returns them as string.
+  /// If there are less characters [available][#hasNext()] the returned string will be shorter than `count`
+  /// and only contain the available characters. Unlike [#read(int)] this method does NOT consume the characters
+  /// and will therefore NOT change the state of this scanner.
+  ///
+  /// @param count is the number of characters to peek. You may use [Integer#MAX_VALUE] to peek until the end of
+  ///        text (EOT) if the data-size is suitable.
+  /// @return a string with the given number of characters or all available characters if less than `count`. Will
+  ///         be the empty string if no character is [available][#hasNext()] at all.
   @Override
   public String peekString(int count) {
 
@@ -353,11 +323,9 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
     return true;
   }
 
-  /**
-   * This method gets the tail of this scanner without changing the state.
-   *
-   * @return the tail of this scanner.
-   */
+  /// This method gets the tail of this scanner without changing the state.
+  ///
+  /// @return the tail of this scanner.
   protected String getTail() {
 
     String tail = "";
@@ -367,13 +335,11 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
     return tail;
   }
 
-  /**
-   * This method gets the tail of this scanner limited (truncated) to the given {@code maximum} number of characters
-   * without changing the state.
-   *
-   * @param maximum is the maximum number of characters to return from the {@link #getTail() tail}.
-   * @return the tail of this scanner.
-   */
+  /// This method gets the tail of this scanner limited (truncated) to the given `maximum` number of characters
+  /// without changing the state.
+  ///
+  /// @param maximum is the maximum number of characters to return from the [tail][#getTail()].
+  /// @return the tail of this scanner.
   protected String getTail(int maximum) {
 
     String tail = "";
@@ -407,13 +373,11 @@ public class CharSequenceScanner extends AbstractCharStreamScanner {
     }
   }
 
-  /**
-   * This method gets the original string to parse.
-   *
-   * @see CharSequenceScanner#CharSequenceScanner(String)
-   *
-   * @return the original string.
-   */
+  /// This method gets the original string to parse.
+  ///
+  /// @see CharSequenceScanner#CharSequenceScanner(String)
+  ///
+  /// @return the original string.
   public String getOriginalString() {
 
     if (this.string != null) {

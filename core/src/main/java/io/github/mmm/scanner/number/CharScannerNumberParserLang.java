@@ -4,10 +4,8 @@ import java.util.Locale;
 
 import io.github.mmm.base.number.NumberType;
 
-/**
- * {@link CharScannerNumberParser} to parse java.lang {@link Number} values such as {@link Long}, {@link Integer},
- * {@link Double} or {@link Float}.
- */
+/// [CharScannerNumberParser] to parse java.lang [Number] values such as [Long], [Integer],
+/// [Double] or [Float].
 public class CharScannerNumberParserLang extends CharScannerNumberParserBase {
 
   private static final int EXPONENT_BIAS = 0x3FF; // 1024
@@ -77,37 +75,31 @@ public class CharScannerNumberParserLang extends CharScannerNumberParserBase {
 
   private int digitsOverflow;
 
-  /**
-   * The constructor.
-   *
-   * @param radixMode the {@link CharScannerRadixHandler} for {@link #radix(int, char)}.
-   * @param numberType the {@link NumberType}.
-   */
+  /// The constructor.
+  ///
+  /// @param radixMode the [CharScannerRadixHandler] for [#radix(int, char)].
+  /// @param numberType the [NumberType].
   public CharScannerNumberParserLang(CharScannerRadixHandler radixMode, NumberType<?> numberType) {
 
     this(radixMode, numberType, "", nonDecimalMax(numberType));
   }
 
-  /**
-   * The constructor.
-   *
-   * @param radixMode the {@link CharScannerRadixHandler} for {@link #radix(int, char)}.
-   * @param numberType the {@link NumberType}.
-   * @param delimiters the accepted {@link #special(int) delimiter} characters.
-   */
+  /// The constructor.
+  ///
+  /// @param radixMode the [CharScannerRadixHandler] for [#radix(int, char)].
+  /// @param numberType the [NumberType].
+  /// @param delimiters the accepted [delimiter][#special(int)] characters.
   public CharScannerNumberParserLang(CharScannerRadixHandler radixMode, NumberType<?> numberType, String delimiters) {
 
     this(radixMode, numberType, delimiters, nonDecimalMax(numberType));
   }
 
-  /**
-   * The constructor.
-   *
-   * @param radixMode the {@link CharScannerRadixHandler} for {@link #radix(int, char)}.
-   * @param numberType the {@link NumberType}.
-   * @param delimiters the accepted {@link #special(int) delimiter} characters.
-   * @param maxNonDecimal the maximum allowed number (e.g. {@link Integer#MAX_VALUE} to parse an {@link Integer} value).
-   */
+  /// The constructor.
+  ///
+  /// @param radixMode the [CharScannerRadixHandler] for [#radix(int, char)].
+  /// @param numberType the [NumberType].
+  /// @param delimiters the accepted [delimiter][#special(int)] characters.
+  /// @param maxNonDecimal the maximum allowed number (e.g. [Integer#MAX_VALUE] to parse an [Integer] value).
   public CharScannerNumberParserLang(CharScannerRadixHandler radixMode, NumberType<?> numberType, String delimiters,
       long maxNonDecimal) {
 
@@ -371,10 +363,8 @@ public class CharScannerNumberParserLang extends CharScannerNumberParserBase {
     return !this.error && ((this.digitsLeadingZeros + this.digitsTotal) == 0) && (this.decimal == 0);
   }
 
-  /**
-   * @return the parsed value as {@link Integer}.
-   * @throws NumberFormatException if parsing failed.
-   */
+  /// @return the parsed value as [Integer].
+  /// @throws NumberFormatException if parsing failed.
   public Integer asInteger() {
 
     assert (this.numberType == NumberType.INTEGER) || (this.numberType == null);
@@ -386,10 +376,8 @@ public class CharScannerNumberParserLang extends CharScannerNumberParserBase {
     return Integer.valueOf((int) getLong());
   }
 
-  /**
-   * @return the parsed value as {@link Long}.
-   * @throws NumberFormatException if parsing failed.
-   */
+  /// @return the parsed value as [Long].
+  /// @throws NumberFormatException if parsing failed.
   public Long asLong() {
 
     assert (this.numberType == NumberType.LONG) || (this.numberType == null);
@@ -435,10 +423,8 @@ public class CharScannerNumberParserLang extends CharScannerNumberParserBase {
     return errorMessage.toString();
   }
 
-  /**
-   * @return the parsed value as {@link Double}.
-   * @throws NumberFormatException if parsing failed.
-   */
+  /// @return the parsed value as [Double].
+  /// @throws NumberFormatException if parsing failed.
   public Double asDouble() {
 
     assert (this.numberType == NumberType.DOUBLE) || (this.numberType == null);

@@ -19,11 +19,9 @@ import io.github.mmm.scanner.number.CharScannerNumberParserString;
 import io.github.mmm.scanner.number.CharScannerRadixHandler;
 import io.github.mmm.scanner.number.CharScannerRadixMode;
 
-/**
- * Abstract implementation of {@link CharStreamScanner}.<br>
- *
- * @since 1.0.0
- */
+/// Abstract implementation of [CharStreamScanner].
+///
+/// @since 1.0.0
 public abstract class AbstractCharStreamScanner implements CharStreamScanner {
 
   static final Logger LOG = LoggerFactory.getLogger(AbstractCharStreamScanner.class);
@@ -32,46 +30,40 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
 
   private final TextFormatMessageHandler messageHandler;
 
-  /** The internal buffer with character data. */
+  /// The internal buffer with character data.
   protected String buffer;
 
-  /** The start position in the {@link #buffer} from where reading operations consumer data from. */
+  /// The start position in the [#buffer] from where reading operations consumer data from.
   protected int offset;
 
-  /**
-   * The limit in the {@link #buffer}. If the offset has reached this position no further reading (not even the current
-   * {@link #offset}) from the {@link #buffer} is allowed.
-   */
+  /// The limit in the [#buffer]. If the offset has reached this position no further reading (not even the current
+  /// [#offset]) from the [#buffer] is allowed.
   protected int limit;
 
-  /** @see #getLine() */
+  /// @see #getLine()
   protected int line;
 
-  /** @see #getColumn() */
+  /// @see #getColumn()
   protected int column;
 
-  /** A {@link StringBuilder} instance that can be shared and reused. May initially be <code>null</code>. */
+  /// A [StringBuilder] instance that can be shared and reused. May initially be `null`.
   private StringBuilder sb;
 
-  /**
-   * The constructor.
-   *
-   * @param charBuffer the internal {@code char[]} buffer.
-   * @param messageHandler the {@link TextFormatMessageHandler}.
-   */
+  /// The constructor.
+  ///
+  /// @param charBuffer the internal `char[]` buffer.
+  /// @param messageHandler the [TextFormatMessageHandler].
   public AbstractCharStreamScanner(String charBuffer, TextFormatMessageHandler messageHandler) {
 
     this(charBuffer, messageHandler, 1, 1);
   }
 
-  /**
-   * The constructor.
-   *
-   * @param buffer the internal {@code char[]} buffer.
-   * @param messageHandler the {@link TextFormatMessageHandler}.
-   * @param line the initial {@link #getLine() line}.
-   * @param column the initial {@link #getColumn() column}.
-   */
+  /// The constructor.
+  ///
+  /// @param buffer the internal `char[]` buffer.
+  /// @param messageHandler the [TextFormatMessageHandler].
+  /// @param line the initial [line][#getLine()].
+  /// @param column the initial [column][#getColumn()].
   public AbstractCharStreamScanner(String buffer, TextFormatMessageHandler messageHandler, int line, int column) {
 
     super();
@@ -111,9 +103,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     return this.messageHandler.getMessages();
   }
 
-  /**
-   * Resets the internal state.
-   */
+  /// Resets the internal state.
   protected void reset() {
 
     this.offset = 0;
@@ -125,11 +115,9 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     }
   }
 
-  /**
-   * @param builder a local {@link StringBuilder} variable to be allocated lazily.
-   * @return the given {@link StringBuilder} if not {@code null} or otherwise a reused {@link StringBuilder} instance
-   *         that has been reset.
-   */
+  /// @param builder a local [StringBuilder] variable to be allocated lazily.
+  /// @return the given [StringBuilder] if not `null` or otherwise a reused [StringBuilder] instance
+  ///         that has been reset.
   protected StringBuilder builder(StringBuilder builder) {
 
     if (builder != null) {
@@ -142,14 +130,12 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     return this.sb;
   }
 
-  /**
-   * @param builder a local {@link StringBuilder} variable to be allocated lazily.
-   * @param start the start index in the underlying buffer to append.
-   * @param end the limit index in the underlying buffer pointing to the next position after the last character to
-   *        append.
-   * @return the given {@link StringBuilder} if not {@code null} or otherwise a reused {@link StringBuilder} instance
-   *         that has been reset.
-   */
+  /// @param builder a local [StringBuilder] variable to be allocated lazily.
+  /// @param start the start index in the underlying buffer to append.
+  /// @param end the limit index in the underlying buffer pointing to the next position after the last character to
+  ///        append.
+  /// @return the given [StringBuilder] if not `null` or otherwise a reused [StringBuilder] instance
+  ///         that has been reset.
   protected StringBuilder append(StringBuilder builder, int start, int end) {
 
     int len = end - start;
@@ -161,15 +147,13 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     return b;
   }
 
-  /**
-   * @param builder the local {@link StringBuilder} instance where data may already have been appended to. May be
-   *        {@code null}.
-   * @param start the start index in the underlying buffer to append.
-   * @param end the limit index in the underlying buffer pointing to the next position after the last character to
-   *        append.
-   * @return the {@link String} with the underlying buffer data from {@code start} to {@code end-1} potentially appended
-   *         to the given {@link StringBuilder} if not {@code null}.
-   */
+  /// @param builder the local [StringBuilder] instance where data may already have been appended to. May be
+  ///        `null`.
+  /// @param start the start index in the underlying buffer to append.
+  /// @param end the limit index in the underlying buffer pointing to the next position after the last character to
+  ///        append.
+  /// @return the [String] with the underlying buffer data from `start` to `end-1` potentially appended
+  ///         to the given [StringBuilder] if not `null`.
   protected String getAppended(StringBuilder builder, int start, int end) {
 
     if (end <= start) {
@@ -192,47 +176,39 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     return fill();
   }
 
-  /**
-   * @return {@code true} if the end of stream (EOS) has been reached, {@code false} otherwise. If {@code true} (EOS)
-   *         the internal buffer contains the entire rest of the data to scan in memory. If then also all data is
-   *         consumed from the buffer, {@link #isEot() EOT} has been reached. For instances of that are not backed by an
-   *         underlying stream of data (like {@link CharSequenceScanner}) this method will always return {@code true}.
-   */
+  /// @return `true` if the end of stream (EOS) has been reached, `false` otherwise. If `true` (EOS)
+  ///         the internal buffer contains the entire rest of the data to scan in memory. If then also all data is
+  ///         consumed from the buffer, [EOT][#isEot()] has been reached. For instances of that are not backed by an
+  ///         underlying stream of data (like [CharSequenceScanner]) this method will always return `true`.
   protected boolean isEos() {
 
     return true;
   }
 
-  /**
-   * @return {@code true} if end of buffer (EOB) or in other words no data is available after the current
-   *         {@link #buffer}, {@code false} otherwise (e.g. if not {@link #isEos() EOS}).
-   */
+  /// @return `true` if end of buffer (EOB) or in other words no data is available after the current
+  ///         [#buffer], `false` otherwise (e.g. if not [EOS][#isEos()]).
   protected boolean isEob() {
 
     return true;
   }
 
-  /**
-   * <b>ATTENTION:</b>
-   *
-   * @return {@code true} if end of text (EOT) is known to have been reached, {@code false} otherwise. The returned
-   *         result will be almost the same as <code>!{@link #hasNext()}</code> but this method will not modify the
-   *         state of this scanner (read additional data, modify buffers, etc.). However, if the underlying stream is
-   *         already consumed without returning {@code -1} to signal {@link #isEos() EOS} this method may return
-   *         {@code false} even though the next call of {@link #hasNext()} may also return {@code false}.
-   */
+  /// **ATTENTION:**
+  ///
+  /// @return `true` if end of text (EOT) is known to have been reached, `false` otherwise. The returned
+  ///         result will be almost the same as `![#hasNext()]` but this method will not modify the
+  ///         state of this scanner (read additional data, modify buffers, etc.). However, if the underlying stream is
+  ///         already consumed without returning `-1` to signal [EOS][#isEos()] this method may return
+  ///         `false` even though the next call of [#hasNext()] may also return `false`.
   protected boolean isEot() {
 
     return (this.offset >= this.limit);
   }
 
-  /**
-   * Consumes all remaining data in the internal {@link #buffer} and fills the {@link #buffer} with further data (if
-   * available from underlying source such as a stream/reader). If the {@link #isEos() end of the stream} has not been
-   * reached, all buffers should be filled now.
-   *
-   * @return {@code true} if data was filled, {@code false} if {@link #isEos() EOS}.
-   */
+  /// Consumes all remaining data in the internal [#buffer] and fills the [#buffer] with further data (if
+  /// available from underlying source such as a stream/reader). If the [end of the stream][#isEos()] has not been
+  /// reached, all buffers should be filled now.
+  ///
+  /// @return `true` if data was filled, `false` if [EOS][#isEos()].
   protected boolean fill() {
 
     return false;
@@ -247,12 +223,10 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     return EOS;
   }
 
-  /**
-   * Updates {@link #getColumn() column} and {@link #getLine() line} if the given character is consumed.
-   *
-   * @param codePoint the character to handle.
-   * @return the given character.
-   */
+  /// Updates [column][#getColumn()] and [line][#getLine()] if the given character is consumed.
+  ///
+  /// @param codePoint the character to handle.
+  /// @return the given character.
   protected int handleCodePoint(int codePoint) {
 
     if (codePoint == '\n') {
@@ -269,9 +243,7 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     return codePoint;
   }
 
-  /**
-   * @param newOffset the new {@link #offset} value to set. Should be greater or equal to the current {@link #offset}.
-   */
+  /// @param newOffset the new [#offset] value to set. Should be greater or equal to the current [#offset].
   protected void setOffset(int newOffset) {
 
     assert (newOffset >= this.offset);
@@ -290,12 +262,10 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     return EOS;
   }
 
-  /**
-   * @param builder the optional {@link StringBuilder} where data may have already been appended.
-   * @param acceptEot {@code true} to accept {@link #isEot() EOT}, {@code false} otherwise.
-   * @return {@code null} if {@code acceptEot} is {@code false}, otherwise the {@link String} from the given
-   *         {@link StringBuilder} or the empty {@link String} in case the {@link StringBuilder} was {@code null}.
-   */
+  /// @param builder the optional [StringBuilder] where data may have already been appended.
+  /// @param acceptEot `true` to accept [EOT][#isEot()], `false` otherwise.
+  /// @return `null` if `acceptEot` is `false`, otherwise the [String] from the given
+  ///         [StringBuilder] or the empty [String] in case the [StringBuilder] was `null`.
   protected String eot(StringBuilder builder, boolean acceptEot) {
 
     if (acceptEot) {
@@ -505,27 +475,23 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     }
   }
 
-  /**
-   * @param length the number of characters for lookahead (match without consuming). May fail if the {@code length}
-   *        exceeds the buffer size.
-   */
+  /// @param length the number of characters for lookahead (match without consuming). May fail if the `length`
+  ///        exceeds the buffer size.
   protected void verifyLookahead(int length) {
 
     // nothing by default
   }
 
-  /**
-   * @param stopChars the stop {@link String}. If {@code ignoreCase} is {@code true} in lower case.
-   * @param ignoreCase - {@code true} to (also) compare chars in {@link Character#toLowerCase(char) lower case},
-   *        {@code false} otherwise.
-   * @param appender an optional lambda to {@link Runnable#run() run} before shifting buffers to append data.
-   * @param skip - {@code true} to update buffers and offset such that on success this scanner points after the expected
-   *        stop {@link String}, {@code false} otherwise (to not consume any character in any case).
-   * @return {@code true} if the stop {@link String} ({@code stopChars}) was found and consumed, {@code false} otherwise
-   *         (and no data consumed).
-   * @see #readUntil(CharFilter, boolean, String, boolean)
-   * @see #skipOver(String, boolean, CharFilter)
-   */
+  /// @param stopChars the stop [String]. If `ignoreCase` is `true` in lower case.
+  /// @param ignoreCase - `true` to (also) compare chars in [lower case][Character#toLowerCase(char)],
+  ///        `false` otherwise.
+  /// @param appender an optional lambda to [run][Runnable#run()] before shifting buffers to append data.
+  /// @param skip - `true` to update buffers and offset such that on success this scanner points after the expected
+  ///        stop [String], `false` otherwise (to not consume any character in any case).
+  /// @return `true` if the stop [String] (`stopChars`) was found and consumed, `false` otherwise
+  ///         (and no data consumed).
+  /// @see #readUntil(CharFilter, boolean, String, boolean)
+  /// @see #skipOver(String, boolean, CharFilter)
   protected abstract boolean expectRestWithLookahead(String stopChars, boolean ignoreCase, Runnable appender,
       boolean skip);
 
@@ -1437,11 +1403,9 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     }
   }
 
-  /**
-   * @param actual the actual number of characters.
-   * @param min the minimum number of characters required.
-   * @param filter the {@link CharFilter} that was used.
-   */
+  /// @param actual the actual number of characters.
+  /// @param min the minimum number of characters required.
+  /// @param filter the [CharFilter] that was used.
   protected void requireMin(int actual, int min, CharFilter filter) {
 
     if (actual < min) {
@@ -1456,10 +1420,8 @@ public abstract class AbstractCharStreamScanner implements CharStreamScanner {
     return result;
   }
 
-  /**
-   * @return the {@link String} with the characters that have already been parsed but are still available in the
-   *         underlying buffer. May be used for debugging or error messages.
-   */
+  /// @return the [String] with the characters that have already been parsed but are still available in the
+  ///         underlying buffer. May be used for debugging or error messages.
   @Override
   public String getBufferParsed() {
 

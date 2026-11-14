@@ -4,9 +4,7 @@ package io.github.mmm.scanner;
 
 import java.io.StringReader;
 
-/**
- * Test of {@link CharReaderScanner}.
- */
+/// Test of [CharReaderScanner].
 class CharReaderScannerTest extends AbstractCharStreamScannerTest {
 
   private static final CharReaderScanner SCANNER = new CharReaderScanner(1, HANDLER);

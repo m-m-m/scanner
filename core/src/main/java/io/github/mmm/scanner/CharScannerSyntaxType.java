@@ -2,9 +2,7 @@
  * http://www.apache.org/licenses/LICENSE-2.0 */
 package io.github.mmm.scanner;
 
-/**
- * Simplified implementation of {@link CharScannerSyntax} as immutable type.
- */
+/// Simplified implementation of [CharScannerSyntax] as immutable type.
 final class CharScannerSyntaxType implements CharScannerSyntax {
 
   static final CharScannerSyntaxType SINGLE_QUOTE = new CharScannerSyntaxType('\\', '\'');

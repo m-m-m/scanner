@@ -2,9 +2,7 @@
  * http://www.apache.org/licenses/LICENSE-2.0 */
 package io.github.mmm.scanner;
 
-/**
- * Simple static helper for dealing with escaped characters.
- */
+/// Simple static helper for dealing with escaped characters.
 public class CharEscapeHelper {
 
   private static final Character CHAR_TAB = Character.valueOf('\t');
@@ -39,11 +37,9 @@ public class CharEscapeHelper {
 
   private static final Character CHAR_BEL = Character.valueOf('\7');
 
-  /**
-   * @param c the character that was escaped (e.g. 't' for tab, 'n' for line feed, 'r' for carriage return, '0' for NUL,
-   *        etc.)
-   * @return the resolved (unescaped) character according to JLS 3.10.6 or {@code null} for invalid escape character.
-   */
+  /// @param c the character that was escaped (e.g. 't' for tab, 'n' for line feed, 'r' for carriage return, '0' for NUL,
+  ///        etc.)
+  /// @return the resolved (unescaped) character according to JLS 3.10.6 or `null` for invalid escape character.
   public static Character resolveEscape(int c) {
 
     switch (c) {

@@ -9,13 +9,11 @@ import io.github.mmm.base.filter.CharFilter;
 import io.github.mmm.base.io.ReaderHelper;
 import io.github.mmm.base.text.TextFormatMessageHandler;
 
-/**
- * Implementation of {@link CharStreamScanner} that adapts a {@link Reader} to read and parse textual data. Unlike
- * {@link CharStreamScanner} it allows to parse very long textual data without reading it entirely into the heap memory
- * as a {@link String}.
- *
- * @since 1.0.0
- */
+/// Implementation of [CharStreamScanner] that adapts a [Reader] to read and parse textual data. Unlike
+/// [CharStreamScanner] it allows to parse very long textual data without reading it entirely into the heap memory
+/// as a [String].
+///
+/// @since 1.0.0
 public class CharReaderScanner extends AbstractCharStreamScanner {
 
   private Reader reader;
@@ -26,87 +24,71 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
 
   private int lookaheadLimit;
 
-  /** @see #getPosition() */
+  /// @see #getPosition()
   protected int position;
 
-  /**
-   * The constructor.
-   */
+  /// The constructor.
   public CharReaderScanner() {
 
     this(null, null);
   }
 
-  /**
-   * The constructor.
-   *
-   * @param messageHandler the {@link TextFormatMessageHandler}.
-   */
+  /// The constructor.
+  ///
+  /// @param messageHandler the [TextFormatMessageHandler].
   public CharReaderScanner(TextFormatMessageHandler messageHandler) {
 
     this(messageHandler, null);
   }
 
-  /**
-   * The constructor.
-   *
-   * @param reader the (initial) {@link Reader}.
-   */
+  /// The constructor.
+  ///
+  /// @param reader the (initial) [Reader].
   public CharReaderScanner(Reader reader) {
 
     this(null, reader);
   }
 
-  /**
-   * The constructor.
-   *
-   * @param messageHandler the {@link TextFormatMessageHandler}.
-   * @param reader the (initial) {@link Reader}.
-   */
+  /// The constructor.
+  ///
+  /// @param messageHandler the [TextFormatMessageHandler].
+  /// @param reader the (initial) [Reader].
   public CharReaderScanner(TextFormatMessageHandler messageHandler, Reader reader) {
 
     this(4096, messageHandler, reader);
   }
 
-  /**
-   * The constructor.
-   *
-   * @param capacity the buffer capacity.
-   */
+  /// The constructor.
+  ///
+  /// @param capacity the buffer capacity.
   public CharReaderScanner(int capacity) {
 
     this(capacity, null, null);
   }
 
-  /**
-   * The constructor.
-   *
-   * @param capacity the buffer capacity.
-   * @param messageHandler the {@link TextFormatMessageHandler}.
-   */
+  /// The constructor.
+  ///
+  /// @param capacity the buffer capacity.
+  /// @param messageHandler the [TextFormatMessageHandler].
   public CharReaderScanner(int capacity, TextFormatMessageHandler messageHandler) {
 
     this(capacity, messageHandler, null);
   }
 
-  /**
-   * The constructor.
-   *
-   * @param capacity the buffer capacity.
-   * @param reader the (initial) {@link Reader}.
-   */
+  /// The constructor.
+  ///
+  /// @param capacity the buffer capacity.
+  /// @param reader the (initial) [Reader].
   public CharReaderScanner(int capacity, Reader reader) {
 
     this(capacity, null, reader);
   }
 
-  /**
-   * The constructor.
-   *
-   * @param capacity the buffer capacity.
-   * @param messageHandler the {@link TextFormatMessageHandler}.
-   * @param reader the (initial) {@link Reader}.
-   */
+  /// The constructor.
+  ///
+  /// @param capacity the buffer capacity.
+  /// @param messageHandler the [TextFormatMessageHandler].
+  /// @param reader the (initial) [Reader].
   public CharReaderScanner(int capacity, TextFormatMessageHandler messageHandler, Reader reader) {
 
     super("", messageHandler);
@@ -223,12 +205,10 @@ public class CharReaderScanner extends AbstractCharStreamScanner {
     }
   }
 
-  /**
-   * Resets this buffer for reuse with a new {@link Reader}.<br>
-   * This will also reset the {@link #getPosition() position}.
-   *
-   * @param reader the new {@link Reader} to set. May be {@code null} to entirely clear this buffer.
-   */
+  /// Resets this buffer for reuse with a new [Reader].
+  /// This will also reset the [position][#getPosition()].
+  ///
+  /// @param reader the new [Reader] to set. May be `null` to entirely clear this buffer.
   public void setReader(Reader reader) {
 
     this.position = 0;

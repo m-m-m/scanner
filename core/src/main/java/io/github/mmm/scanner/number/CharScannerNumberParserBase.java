@@ -1,71 +1,67 @@
 package io.github.mmm.scanner.number;
 
-/**
- * {@link CharScannerNumberParser} to parse java.lang {@link Number} values such as {@link Long}, {@link Integer},
- * {@link Double} or {@link Float}.
- */
+/// [CharScannerNumberParser] to parse java.lang [Number] values such as [Long], [Integer],
+/// [Double] or [Float].
 public abstract class CharScannerNumberParserBase implements CharScannerNumberParser {
 
-  /** {@link Double#NaN Not a Number}. */
+  /// [Not a Number][Double#NaN].
   protected static final String NAN = "NaN";
 
-  /** {@link Double#POSITIVE_INFINITY Infinity}. */
+  /// [Infinity][Double#POSITIVE_INFINITY].
   protected static final String INFINITY = "Infinity";
 
-  /** The {@link CharScannerRadixHandler} for {@link #radix(int, char)}. */
+  /// The [CharScannerRadixHandler] for [#radix(int, char)].
   private final CharScannerRadixHandler radixMode;
 
-  /** the characters {@link #special(char) accepted} as delimiter. */
+  /// the characters [accepted][#special(char)] as delimiter.
   private final CharScannerNumberSpecial[] specials;
 
-  /** {@link StringBuilder} to build the number as {@link String}. Initialized by sub-class to support lazy init. */
+  /// [StringBuilder] to build the number as [String]. Initialized by sub-class to support lazy init.
   protected StringBuilder builder;
 
-  /** {@code true} if an error was detected and the result can only be an exception, {@code false} otherwise. */
+  /// `true` if an error was detected and the result can only be an exception, `false` otherwise.
   protected boolean error;
 
-  /** The initial sign character +/- or '\0' for none. */
+  /// The initial sign character +/- or '\0' for none.
   protected char sign;
 
-  /** The radix of the digits, initially {@code 10} but can be changed by {@link #radix(int, char)}. */
+  /// The radix of the digits, initially `10` but can be changed by [#radix(int, char)].
   protected int radix;
 
-  /** The radix character used by {@link #builder()} if lazy created only for error. */
+  /// The radix character used by [#builder()] if lazy created only for error.
   protected char radixChar;
 
-  /** The total number of digits of mantissa that have been parsed. */
+  /// The total number of digits of mantissa that have been parsed.
   protected int digitsTotal;
 
-  /** The leading zeros of mantissa. */
+  /// The leading zeros of mantissa.
   protected int digitsLeadingZeros;
 
-  /** The current number of trailing zeros of mantissa. */
+  /// The current number of trailing zeros of mantissa.
   protected int digitsTrailingZeros;
 
-  /** The position of the decimal dot in the mantissa. */
+  /// The position of the decimal dot in the mantissa.
   protected int dotPosition;
 
-  /** The exponent symbol character e/E/p/P or '\0' for none. */
+  /// The exponent symbol character e/E/p/P or '\0' for none.
   protected char exponentSymbol;
 
-  /** The exponent sign character +/- or '\0' for none. */
+  /// The exponent sign character +/- or '\0' for none.
   protected char exponentSign;
 
-  /** The total number of digits of the exponent. */
+  /// The total number of digits of the exponent.
   protected int exponentDigitsTotal;
 
-  /** The leading zeros of the exponent. */
+  /// The leading zeros of the exponent.
   protected int exponentDigitsLeadingZeros;
 
-  /** {@code true} in case of a delimiter that has not been completed by a digit, {@code false} otherwise. */
+  /// `true` in case of a delimiter that has not been completed by a digit, `false` otherwise.
   protected boolean openDelimiter;
 
-  /**
-   * The constructor.
-   *
-   * @param radixMode the {@link CharScannerRadixHandler} for {@link #radix(int, char)}.
-   * @param specials the {@link #special(String) special numbers} and {@link #special(int) delimiters}.
-   */
+  /// The constructor.
+  ///
+  /// @param radixMode the [CharScannerRadixHandler] for [#radix(int, char)].
+  /// @param specials the [special numbers][#special(String)] and [delimiters][#special(int)].
   public CharScannerNumberParserBase(CharScannerRadixHandler radixMode, CharScannerNumberSpecial... specials) {
 
     super();
@@ -74,12 +70,10 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
     this.radix = 10;
   }
 
-  /**
-   * @param delimiters the accepted {@link #special(int) delimiter} characters.
-   * @param specialNumbers - {@code true} to accept the special numbers {@link #NAN} and {@link #INFINITY}.
-   * @return the resulting {@link String} array to pass to
-   *         {@link #CharScannerNumberParserBase(CharScannerRadixHandler, CharScannerNumberSpecial...) constructor}.
-   */
+  /// @param delimiters the accepted [delimiter][#special(int)] characters.
+  /// @param specialNumbers - `true` to accept the special numbers [#NAN] and [#INFINITY].
+  /// @return the resulting [String] array to pass to
+  ///         [constructor][#CharScannerNumberParserBase(CharScannerRadixHandler, CharScannerNumberSpecial...)].
   public static CharScannerNumberSpecial[] specials(String delimiters, boolean specialNumbers) {
 
     int len = delimiters.length();
@@ -99,18 +93,14 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
     return result;
   }
 
-  /**
-   * @param c the character to check.
-   * @return {@code true} in case of a digit, {@code false} otherwise.
-   */
+  /// @param c the character to check.
+  /// @return `true` in case of a digit, `false` otherwise.
   protected final boolean isDigit(char c) {
 
     return Character.isDigit(c);
   }
 
-  /**
-   * @return the {@link StringBuilder} to build the number. Ensures initialization in case of lazy-init.
-   */
+  /// @return the [StringBuilder] to build the number. Ensures initialization in case of lazy-init.
   protected StringBuilder builder() {
 
     return this.builder;
@@ -145,9 +135,7 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
     return r;
   }
 
-  /**
-   * Appends the radix to the number {@link StringBuilder}.
-   */
+  /// Appends the radix to the number [StringBuilder].
   protected void appendRadix() {
 
     if (this.radixChar != 0) {
@@ -184,18 +172,14 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
     return true;
   }
 
-  /**
-   * Resets the trailing zeros if a non zero digit was found for mantissa.
-   */
+  /// Resets the trailing zeros if a non zero digit was found for mantissa.
   protected void resetTrailingZeros() {
 
     this.digitsTrailingZeros = 0;
   }
 
-  /**
-   * @return {@code true} in case decimal numbers with {@link #dot()} and/or {@link #exponent(char, char) exponent} are
-   *         accepted, {@code false} otherwise.
-   */
+  /// @return `true` in case decimal numbers with [#dot()] and/or [exponent][#exponent(char, char)] are
+  ///         accepted, `false` otherwise.
   protected abstract boolean isDecimal();
 
   @Override
@@ -239,12 +223,10 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
     return false;
   }
 
-  /**
-   * Appends the {@link #exponent(char, char) exponent} symbols.
-   *
-   * @param lazy - {@code true} if called lazily to recreate the parsed {@link String} on numeric error, {@code false}
-   *        otherwise (regular appending in {@link String} mode).
-   */
+  /// Appends the [exponent][#exponent(char, char)] symbols.
+  ///
+  /// @param lazy - `true` if called lazily to recreate the parsed [String] on numeric error, `false`
+  ///        otherwise (regular appending in [String] mode).
   protected void appendExponent(boolean lazy) {
 
     if (this.exponentSymbol != 0) {
@@ -282,9 +264,7 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
     }
   }
 
-  /**
-   * @return {@code true} if the current position and state is valid to accept a digit delimiter.
-   */
+  /// @return `true` if the current position and state is valid to accept a digit delimiter.
   protected final boolean isValidDelimiterPosition() {
 
     if (this.exponentSign != 0) {
@@ -308,41 +288,31 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
     return this.builder.toString();
   }
 
-  /**
-   * Interface for handling of a special number syntax.
-   *
-   * @see CharScannerNumberParser#special(int)
-   * @see CharScannerNumberParser#special(String)
-   */
+  /// Interface for handling of a special number syntax.
+  ///
+  /// @see CharScannerNumberParser#special(int)
+  /// @see CharScannerNumberParser#special(String)
   public static interface CharScannerNumberSpecial {
 
-    /**
-     * @param c the {@link CharScannerNumberParser#special(int) special character} to check.
-     * @return {@code true} if the given character shall be handled by this {@link CharScannerNumberSpecial}.
-     */
+    /// @param c the [special character][CharScannerNumberParser#special(int)] to check.
+    /// @return `true` if the given character shall be handled by this [CharScannerNumberSpecial].
     boolean isSpecialStart(int c);
 
-    /**
-     * @return the {@link CharScannerNumberParser#special(String) special} {@link String} to expect.
-     */
+    /// @return the [special][CharScannerNumberParser#special(String)] [String] to expect.
     String getSpecial();
 
   }
 
-  /**
-   * {@link CharScannerNumberSpecial} for digit delimiters like '_'.
-   */
+  /// [CharScannerNumberSpecial] for digit delimiters like '_'.
   public static class CharScannerNumberSpecialDelimiter implements CharScannerNumberSpecial {
 
     private final int delimiter;
 
     private final String delimiterString;
 
-    /**
-     * The constructor.
-     *
-     * @param delimiter the delimiter.
-     */
+    /// The constructor.
+    ///
+    /// @param delimiter the delimiter.
     public CharScannerNumberSpecialDelimiter(int delimiter) {
 
       super();
@@ -369,20 +339,16 @@ public abstract class CharScannerNumberParserBase implements CharScannerNumberPa
 
   }
 
-  /**
-   * {@link CharScannerNumberSpecial} for non-numeric number literals like {@link #NAN}.
-   */
+  /// [CharScannerNumberSpecial] for non-numeric number literals like [#NAN].
   public static class CharScannerNumberSpecialNonNumber implements CharScannerNumberSpecial {
 
     private final String nonNumber;
 
     private final char first;
 
-    /**
-     * The constructor.
-     *
-     * @param nonNumber the {@link #getSpecial() special} {@link String} representing the non-numeric number (e.g. NaN).
-     */
+    /// The constructor.
+    ///
+    /// @param nonNumber the [special][#getSpecial()] [String] representing the non-numeric number (e.g. NaN).
     public CharScannerNumberSpecialNonNumber(String nonNumber) {
 
       super();

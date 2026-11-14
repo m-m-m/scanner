@@ -10,19 +10,15 @@ import io.github.mmm.base.text.TextFormatMessage;
 import io.github.mmm.base.text.TextFormatMessageHandler;
 import io.github.mmm.base.text.TextFormatMessageType;
 
-/**
- * Default implementation of {@link TextFormatMessageHandler}.
- */
+/// Default implementation of [TextFormatMessageHandler].
 @SuppressWarnings("exports")
 public class SimpleTextFormatMessageHandler extends AbstractTextFormatMessageHandler {
 
-  /** Maps each {@link TextFormatMessageType} to its analog {@link Level}. */
+  /// Maps each [TextFormatMessageType] to its analog [Level].
   public static final Function<TextFormatMessageType, Level> LOG_MAPPER_DEFAULT = new LogLevelMapper(false);
 
-  /**
-   * Like {@link #LOG_MAPPER_DEFAULT} but maps {@link TextFormatMessageType#INFO info messages} to log-level
-   * {@link Level#DEBUG debug}.
-   */
+  /// Like [#LOG_MAPPER_DEFAULT] but maps [info messages][TextFormatMessageType#INFO] to log-level
+  /// [debug][Level#DEBUG].
   public static final Function<TextFormatMessageType, Level> LOG_MAPPER_INFO_AS_DEBUG = new LogLevelMapper(true);
 
   private static final SimpleTextFormatMessageHandler INSTANCE = new SimpleTextFormatMessageHandler(false,
@@ -32,15 +28,12 @@ public class SimpleTextFormatMessageHandler extends AbstractTextFormatMessageHan
 
   private final Function<TextFormatMessageType, Level> logLevelMapper;
 
-  /**
-   * The constructor.
-   *
-   * @param throwOnError - {@code true} to throw a {@link RuntimeException} when an {@link TextFormatMessageType#ERROR
-   *        error} {@link TextFormatMessage message} is {@link #handle(TextFormatMessage) handled}.
-   * @param logger the {@link Logger} used to log {@link TextFormatMessage}s. May be {@code null} to omit logging.
-   * @param logLevelMapper the {@link Function} to map {@link TextFormatMessageType} to the according log {@link Level}.
-   * @param collectMessages the flag for {@link #isCollectMessages()}.
-   */
+  /// The constructor.
+  ///
+  /// @param throwOnError - `true` to throw a [RuntimeException] when an [error][TextFormatMessageType#ERROR] [message][TextFormatMessage] is [handled][#handle(TextFormatMessage)].
+  /// @param logger the [Logger] used to log [TextFormatMessage]s. May be `null` to omit logging.
+  /// @param logLevelMapper the [Function] to map [TextFormatMessageType] to the according log [Level].
+  /// @param collectMessages the flag for [#isCollectMessages()].
   public SimpleTextFormatMessageHandler(boolean throwOnError, Logger logger,
       Function<TextFormatMessageType, Level> logLevelMapper, boolean collectMessages) {
 
@@ -111,29 +104,23 @@ public class SimpleTextFormatMessageHandler extends AbstractTextFormatMessageHan
     }
   }
 
-  /**
-   * @return the singleton instance.
-   */
+  /// @return the singleton instance.
   public static SimpleTextFormatMessageHandler get() {
 
     return INSTANCE;
   }
 
-  /**
-   * @return a {@link SimpleTextFormatMessageHandler} that throws an exception in case of a
-   *         {@link TextFormatMessageType#ERROR error} {@link TextFormatMessage message} and collects and logs other
-   *         messages.
-   */
+  /// @return a [SimpleTextFormatMessageHandler] that throws an exception in case of a
+  ///         [error][TextFormatMessageType#ERROR] [message][TextFormatMessage] and collects and logs other
+  ///         messages.
   public static SimpleTextFormatMessageHandler ofThrowErrors() {
 
     return new SimpleTextFormatMessageHandler(true, AbstractCharStreamScanner.LOG, LOG_MAPPER_INFO_AS_DEBUG, true);
   }
 
-  /**
-   * @return a {@link SimpleTextFormatMessageHandler} that throws an exception in case of a
-   *         {@link TextFormatMessageType#ERROR error} {@link TextFormatMessage message} and collects other messages
-   *         without any logging.
-   */
+  /// @return a [SimpleTextFormatMessageHandler] that throws an exception in case of a
+  ///         [error][TextFormatMessageType#ERROR] [message][TextFormatMessage] and collects other messages
+  ///         without any logging.
   public static SimpleTextFormatMessageHandler ofThrowErrorsNoLogging() {
 
     return new SimpleTextFormatMessageHandler(true, null, null, true);

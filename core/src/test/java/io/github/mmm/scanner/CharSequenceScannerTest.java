@@ -4,9 +4,7 @@ package io.github.mmm.scanner;
 
 import org.junit.jupiter.api.Test;
 
-/**
- * Test of {@link CharSequenceScanner}.
- */
+/// Test of [CharSequenceScanner].
 @SuppressWarnings("all")
 class CharSequenceScannerTest extends AbstractCharStreamScannerTest {
 
@@ -16,9 +14,7 @@ class CharSequenceScannerTest extends AbstractCharStreamScannerTest {
     return new CharSequenceScanner(string, HANDLER);
   }
 
-  /**
-   * Tests {@link CharSequenceScanner#readUntil(char, boolean)}.
-   */
+  /// Tests [CharSequenceScanner#readUntil(char, boolean)].
   @Test
   void testReadUntilWithSetCurrentIndex() {
 
